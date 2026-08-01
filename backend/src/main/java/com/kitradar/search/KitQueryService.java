@@ -90,17 +90,28 @@ public class KitQueryService {
     }
 
     private List<Product> featuredOrder(List<Product> products, KitQuery query) {
-        List<Product> inStock = new ArrayList<>();
-        List<Product> outOfStock = new ArrayList<>();
+        List<List<Product>> tiers = java.util.stream.Stream.generate(ArrayList<Product>::new)
+                .limit(4)
+                .map(list -> (List<Product>) list)
+                .toList();
         for (Product product : products) {
-            (product.isInStock() ? inStock : outOfStock).add(product);
+            tiers.get(featuredTier(product)).add(product);
         }
 
         long seed = LocalDate.now(clock.withZone(ZoneOffset.UTC)).toEpochDay() * 31L + featuredQuerySeed(query);
         List<Product> ordered = new ArrayList<>(products.size());
-        ordered.addAll(interleaveStores(inStock, seed));
-        ordered.addAll(interleaveStores(outOfStock, seed + 1));
+        for (int tier = 0; tier < tiers.size(); tier++) {
+            ordered.addAll(interleaveStores(tiers.get(tier), seed + tier));
+        }
         return List.copyOf(ordered);
+    }
+
+    private int featuredTier(Product product) {
+        boolean hasImage = product.getImageUrl() != null && !product.getImageUrl().isBlank();
+        if (product.isInStock()) {
+            return hasImage ? 0 : 1;
+        }
+        return hasImage ? 2 : 3;
     }
 
     private List<Product> interleaveStores(List<Product> products, long seed) {
