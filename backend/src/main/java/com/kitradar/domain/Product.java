@@ -77,6 +77,9 @@ public class Product {
     @Column(name = "source_created_at")
     private Instant sourceCreatedAt;
 
+    @Column(name = "source_date_known", nullable = false)
+    private boolean sourceDateKnown;
+
     @Column(name = "first_seen_at", nullable = false)
     private Instant firstSeenAt;
 
@@ -111,6 +114,7 @@ public class Product {
         this.discountPercent = data.discountPercent();
         this.inStock = data.inStock();
         this.sourceCreatedAt = data.sourceCreatedAt();
+        this.sourceDateKnown = data.sourceCreatedAt() != null;
         this.lastSeenAt = seenAt;
         this.updatedAt = seenAt;
         this.active = true;

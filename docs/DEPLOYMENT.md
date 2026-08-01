@@ -37,7 +37,21 @@ Import the repository into Vercel with `frontend` as its Root Directory. Configu
 
 After the first Vercel deployment, copy its exact origin to `KITRADAR_FRONTEND_ORIGIN` on the backend and redeploy the backend. This is required for browser-side API requests to pass CORS.
 
-## 4. Nightly refresh
+## 4. Coupled API and frontend releases
+
+Vercel automatically deploys the frontend when `main` changes. A frontend change that requires a new API contract (a query value, response field, route, or changed behaviour) must therefore not be pushed first: users could receive the new browser bundle while Fly is still serving the old API.
+
+For a coupled release, use this order:
+
+1. Keep the backend backward-compatible where practical (for example, accept both the old and new query value).
+2. Run the backend and frontend checks locally.
+3. From the intended, committed working tree, deploy Fly first: `cd backend && fly deploy --ha=false`.
+4. Confirm `https://kitradar-api-kartik.fly.dev/actuator/health` returns `UP` and exercise the changed API request.
+5. Only then push `main`, which triggers the Vercel production deployment. Verify the browser route after Vercel completes.
+
+If the Fly deployment fails, do not push the coupled frontend change to `main`. A backend-only change or a frontend-only presentation change can use its normal deployment path, but any API contract dependency uses the ordered release above.
+
+## 5. Nightly refresh
 
 The committed [nightly workflow](../.github/workflows/nightly-refresh.yml) runs at 03:00 IST (21:30 UTC the preceding day) and can also be started manually from the Actions tab. It reads the protected enabled-source registry, fetches every Shopify, DotPe or WooCommerce source from GitHub Actions, then posts canonical catalogues to the protected import API. Add these repository Action secrets:
 
@@ -46,7 +60,7 @@ The committed [nightly workflow](../.github/workflows/nightly-refresh.yml) runs 
 
 Leave the manual `store` input blank to refresh every enabled source, or pass one exact slug to isolate a source. Every source gets a chance to run; a failed source is recorded in run history and the workflow fails only after the remaining sources complete. The 25-minute timeout leaves room for paced public APIs. With this workflow enabled, set `KITRADAR_REFRESH_CRON=-` on the backend to prevent a duplicate in-process run.
 
-## 5. Post-deployment checklist
+## 6. Post-deployment checklist
 
 1. Open `/actuator/health` and confirm `UP`.
 2. Load the catalogue, clearance, and favourites routes in a browser.
