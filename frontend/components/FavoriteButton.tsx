@@ -29,9 +29,9 @@ export function FavoriteButton({ kitId }: { kitId: number }) {
 
   return (
     <button type="button" onClick={toggle} aria-pressed={saved} aria-label={saved ? "Remove from favourites" : "Save to favourites"}
-      className={`absolute right-2 top-2 inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold backdrop-blur transition ${saved ? "bg-signal text-ink" : "bg-ink/85 text-cream hover:bg-[#342742]"}`}>
+      className={`absolute right-3 top-3 z-10 inline-flex h-10 items-center gap-1.5 rounded-full border px-3.5 text-xs font-extrabold shadow-lg backdrop-blur transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal ${saved ? "border-signal bg-signal text-ink" : "border-signal/80 bg-[#21172d]/95 text-cream hover:border-signal hover:bg-[#342742]"}`}>
       <span aria-hidden="true" className="text-base leading-none">{saved ? "♥" : "♡"}</span>
-      <span>{saved ? "Saved" : "Save"}</span>
+      <span>{saved ? "Favourited" : "Favourite"}</span>
     </button>
   );
 }
