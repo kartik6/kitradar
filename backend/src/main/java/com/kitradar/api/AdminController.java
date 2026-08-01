@@ -3,6 +3,7 @@ package com.kitradar.api;
 import com.kitradar.api.dto.RefreshResultDto;
 import com.kitradar.api.dto.RefreshStoreDto;
 import com.kitradar.api.dto.IngestionSourceDto;
+import com.kitradar.api.dto.ImportFailureDto;
 import com.kitradar.api.dto.RawCatalogueDto;
 import com.kitradar.api.dto.ScrapeRunDto;
 import com.kitradar.api.dto.ScrapeRunPageDto;
@@ -82,6 +83,20 @@ public class AdminController {
             @RequestBody RawCatalogueDto catalogue) {
         try {
             return toDto(shopifyImportService.importRawCatalogue(store, catalogue.products()));
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
+        }
+    }
+
+    @PostMapping("/imports/failure")
+    public void recordImportFailure(
+            @RequestParam String store,
+            @RequestBody ImportFailureDto failure) {
+        try {
+            String message = failure.message() == null || failure.message().isBlank()
+                    ? "External catalogue worker failed without an error message"
+                    : failure.message();
+            shopifyImportService.recordExternalFailure(store, message);
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
         }

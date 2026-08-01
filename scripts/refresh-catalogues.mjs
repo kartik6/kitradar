@@ -16,14 +16,44 @@ if (requestedStore && selectedSources.length === 0) {
   throw new Error(`No enabled store found for slug ${requestedStore}`);
 }
 
+const failures = [];
 for (const source of selectedSources) {
-  const products = await fetchProducts(source);
-  const result = await request(`${apiBase}/imports/raw?store=${encodeURIComponent(source.slug)}`, {
-    method: "POST",
-    headers: { ...commonHeaders, "Content-Type": "application/json" },
-    body: JSON.stringify({ products }),
-  });
-  console.log(`${source.slug}: ${result.status}; fetched=${result.fetchedCount}; upserted=${result.upsertedCount}`);
+  let catalogueFetched = false;
+  try {
+    const products = await fetchProducts(source);
+    catalogueFetched = true;
+    const result = await request(`${apiBase}/imports/raw?store=${encodeURIComponent(source.slug)}`, {
+      method: "POST",
+      headers: { ...commonHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ products }),
+    });
+    console.log(`${source.slug}: ${result.status}; fetched=${result.fetchedCount}; upserted=${result.upsertedCount}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    failures.push(`${source.slug}: ${message}`);
+    console.error(`${source.slug}: FAILED; ${message}`);
+    if (!catalogueFetched) {
+      await recordFetchFailure(source.slug, message);
+    }
+  }
+}
+
+if (failures.length) {
+  throw new Error(`${failures.length} catalogue source(s) failed:\n${failures.join("\n")}`);
+}
+
+async function recordFetchFailure(store, message) {
+  try {
+    await request(`${apiBase}/imports/failure?store=${encodeURIComponent(store)}`, {
+      method: "POST",
+      headers: { ...commonHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+      responseType: "text",
+    });
+  } catch (recordError) {
+    const details = recordError instanceof Error ? recordError.message : String(recordError);
+    console.error(`${store}: could not record failed run; ${details}`);
+  }
 }
 
 async function fetchProducts(source) {

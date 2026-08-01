@@ -50,6 +50,11 @@ public class ShopifyImportService {
         return importProducts(store(storeSlug, null), products);
     }
 
+    public void recordExternalFailure(String storeSlug, String message) {
+        Store store = store(storeSlug, null);
+        catalogSynchronizer.recordFailure(store, new IllegalStateException(message));
+    }
+
     private Store store(String storeSlug, Platform requiredPlatform) {
         return storeRepository.findBySlug(storeSlug)
                 .filter(Store::isEnabled)
