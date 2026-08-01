@@ -21,6 +21,7 @@ export function toParams(values: SearchParams) {
   }
   if (!params.has("page")) params.set("page", "0");
   if (!params.has("pageSize")) params.set("pageSize", "24");
+  if (!params.has("sort")) params.set("sort", "latest_added");
   return params;
 }
 

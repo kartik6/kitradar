@@ -17,10 +17,13 @@ if (requestedStore && selectedSources.length === 0) {
 }
 
 const failures = [];
+const workflowStartedAt = Date.now();
+console.log(`Catalogue refresh starting: ${selectedSources.length} enabled store(s)`);
 for (const source of selectedSources) {
   let catalogueFetched = false;
+  const sourceStartedAt = Date.now();
   try {
-    console.log(`${source.slug}: fetching ${source.platform} catalogue...`);
+    console.log(`▶ START ${sourceLabel(source)} — ${source.platform}`);
     const products = await fetchProducts(source);
     catalogueFetched = true;
     const result = await request(`${apiBase}/imports/raw?store=${encodeURIComponent(source.slug)}`, {
@@ -28,11 +31,11 @@ for (const source of selectedSources) {
       headers: { ...commonHeaders, "Content-Type": "application/json" },
       body: JSON.stringify({ products }),
     });
-    console.log(`${source.slug}: ${result.status}; fetched=${result.fetchedCount}; upserted=${result.upsertedCount}`);
+    console.log(`✓ END ${sourceLabel(source)} — ${result.status}; fetched=${result.fetchedCount}; upserted=${result.upsertedCount}; delisted=${result.delistedCount}; ${elapsed(sourceStartedAt)}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     failures.push(`${source.slug}: ${message}`);
-    console.error(`${source.slug}: FAILED; ${message}`);
+    console.error(`✗ END ${sourceLabel(source)} — FAILED; ${message}; ${elapsed(sourceStartedAt)}`);
     if (!catalogueFetched) {
       await recordFetchFailure(source.slug, message);
     }
@@ -40,8 +43,10 @@ for (const source of selectedSources) {
 }
 
 if (failures.length) {
+  console.error(`Catalogue refresh ended with ${failures.length} failure(s); ${elapsed(workflowStartedAt)}`);
   throw new Error(`${failures.length} catalogue source(s) failed:\n${failures.join("\n")}`);
 }
+console.log(`Catalogue refresh complete: ${selectedSources.length} store(s) succeeded; ${elapsed(workflowStartedAt)}`);
 
 async function recordFetchFailure(store, message) {
   try {
@@ -282,6 +287,14 @@ async function request(url, options = {}) {
 function required(name) {
   if (!process.env[name]) throw new Error(`Set ${name}`);
   return process.env[name];
+}
+
+function sourceLabel(source) {
+  return `${source.slug} (${source.baseUrl})`;
+}
+
+function elapsed(startedAt) {
+  return `${((Date.now() - startedAt) / 1000).toFixed(1)}s`;
 }
 
 function pause(milliseconds) {

@@ -25,6 +25,6 @@ public record KitQuery(
         stores = stores == null ? List.of() : List.copyOf(stores);
         sizes = sizes == null ? List.of() : List.copyOf(sizes);
         versions = versions == null ? List.of() : List.copyOf(versions);
-        sort = sort == null ? SortOption.FEATURED : sort;
+        sort = sort == null ? SortOption.LATEST_ADDED : sort;
     }
 }

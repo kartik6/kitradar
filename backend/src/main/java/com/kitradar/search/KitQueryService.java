@@ -77,6 +77,7 @@ public class KitQueryService {
 
     private Sort sort(SortOption option) {
         return switch (option) {
+            case LATEST_ADDED -> Sort.by(Sort.Order.desc("inStock"), Sort.Order.desc("firstSeenAt"), Sort.Order.desc("id"));
             case FEATURED -> featuredBaseSort();
             case PRICE_ASC -> Sort.by(Sort.Order.desc("inStock"), Sort.Order.asc("minPrice"), Sort.Order.desc("id"));
             case PRICE_DESC -> Sort.by(Sort.Order.desc("inStock"), Sort.Order.desc("minPrice"), Sort.Order.desc("id"));
