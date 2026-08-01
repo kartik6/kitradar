@@ -78,6 +78,7 @@ Verified as Shopify, so each is a configuration change with no code: **Thayyil S
 9. As a buyer, I save a kit to my favourites and find it again in the same browser.
 10. As a buyer, I browse only clearance listings and can clearly compare the seller-listed MRP with the sale price.
 11. As the operator, I trigger a refresh manually and see per-store counts and errors.
+12. As the operator, I can inspect recent per-store refresh runs, their status, timestamps, counts, and errors.
 
 ## 7. Functional requirements
 
@@ -168,6 +169,8 @@ The UI shows when the data was last refreshed ("Updated 6 hours ago"), so a buye
 ### FR-9 — Operator refresh
 
 `POST /api/v1/admin/refresh`, protected by a bearer token, optionally scoped to one store. Returns per-store fetched / upserted / delisted counts and any errors. Concurrent runs are prevented.
+
+`GET /api/v1/admin/runs`, protected by the same bearer token, lists newest refresh runs first and supports `store`, `page`, and `pageSize` filters. It is an operator API, not a public browser endpoint.
 
 ## 8. Non-functional requirements
 

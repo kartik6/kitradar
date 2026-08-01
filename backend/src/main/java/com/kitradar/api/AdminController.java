@@ -2,10 +2,18 @@ package com.kitradar.api;
 
 import com.kitradar.api.dto.RefreshResultDto;
 import com.kitradar.api.dto.RefreshStoreDto;
+import com.kitradar.api.dto.ScrapeRunDto;
+import com.kitradar.api.dto.ScrapeRunPageDto;
+import com.kitradar.domain.ScrapeRun;
 import com.kitradar.ingest.RefreshAlreadyRunningException;
 import com.kitradar.ingest.RefreshResult;
 import com.kitradar.ingest.ScrapeOrchestrator;
+import com.kitradar.repository.ScrapeRunRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,9 +25,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class AdminController {
 
     private final ScrapeOrchestrator orchestrator;
+    private final ScrapeRunRepository scrapeRunRepository;
 
-    public AdminController(ScrapeOrchestrator orchestrator) {
+    public AdminController(ScrapeOrchestrator orchestrator, ScrapeRunRepository scrapeRunRepository) {
         this.orchestrator = orchestrator;
+        this.scrapeRunRepository = scrapeRunRepository;
     }
 
     @PostMapping("/refresh")
@@ -31,6 +41,26 @@ public class AdminController {
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
         }
+    }
+
+    @GetMapping("/runs")
+    public ScrapeRunPageDto runs(
+            @RequestParam(required = false) String store,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
+        if (page < 0 || pageSize < 1 || pageSize > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "page must be non-negative and pageSize must be between 1 and 100");
+        }
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<ScrapeRun> runs = store == null || store.isBlank()
+                ? scrapeRunRepository.findAllByOrderByStartedAtDesc(pageable)
+                : scrapeRunRepository.findByStoreSlugOrderByStartedAtDesc(store, pageable);
+        return new ScrapeRunPageDto(
+                runs.map(this::toDto).getContent(),
+                runs.getNumber(),
+                runs.getSize(),
+                runs.getTotalElements(),
+                runs.getTotalPages());
     }
 
     private RefreshResultDto toDto(RefreshResult result) {
@@ -46,5 +76,19 @@ public class AdminController {
                                 store.delistedCount(),
                                 store.errorMessage()))
                         .toList());
+    }
+
+    private ScrapeRunDto toDto(ScrapeRun run) {
+        return new ScrapeRunDto(
+                run.getId(),
+                run.getStore().getSlug(),
+                run.getStore().getName(),
+                run.getStartedAt(),
+                run.getFinishedAt(),
+                run.getStatus(),
+                run.getFetchedCount(),
+                run.getUpsertedCount(),
+                run.getDelistedCount(),
+                run.getErrorMessage());
     }
 }

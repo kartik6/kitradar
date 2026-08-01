@@ -1,0 +1,42 @@
+name: Nightly catalogue refresh
+
+on:
+  schedule:
+    # 03:00 Asia/Kolkata (UTC+05:30). GitHub Actions schedules use UTC.
+    - cron: "30 21 * * *"
+  workflow_dispatch:
+    inputs:
+      store:
+        description: "Optional store slug (for example, full-time-store)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger protected refresh endpoint
+        env:
+          KITRADAR_API_URL: ${{ secrets.KITRADAR_API_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          STORE: ${{ inputs.store }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${KITRADAR_API_URL:?Set the KITRADAR_API_URL GitHub Actions secret}"
+          : "${ADMIN_TOKEN:?Set the ADMIN_TOKEN GitHub Actions secret}"
+
+          url="${KITRADAR_API_URL%/}/api/v1/admin/refresh"
+          if [[ -n "${STORE:-}" ]]; then
+            url="${url}?store=${STORE}"
+          fi
+
+          curl --fail-with-body --show-error --silent \
+            --retry 2 --retry-all-errors --connect-timeout 15 --max-time 540 \
+            --request POST \
+            --header "Authorization: Bearer ${ADMIN_TOKEN}" \
+            "${url}"

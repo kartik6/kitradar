@@ -2,7 +2,7 @@ spring:
   application:
     name: kitradar
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:kitradar}
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:kitradar}?sslmode=${DB_SSLMODE:disable}}
     username: ${DB_USER:kitradar}
     password: ${DB_PASSWORD:kitradar}
   jpa:
@@ -17,6 +17,7 @@ spring:
     enabled: true
 
 server:
+  port: ${PORT:8080}
   error:
     include-message: never
 
@@ -41,5 +42,9 @@ info:
 kitradar:
   # The deployed Vercel URL; localhost is deliberately the only development default.
   frontend-origin: ${KITRADAR_FRONTEND_ORIGIN:http://localhost:3000}
+  refresh:
+    # Set KITRADAR_REFRESH_CRON=- when GitHub Actions is the production scheduler.
+    cron: ${KITRADAR_REFRESH_CRON:0 0 3 * * *}
+    zone: ${KITRADAR_REFRESH_ZONE:Asia/Kolkata}
   admin:
     token: ${ADMIN_TOKEN:}

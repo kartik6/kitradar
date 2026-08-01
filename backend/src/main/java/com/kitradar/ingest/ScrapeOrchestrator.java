@@ -41,7 +41,7 @@ public class ScrapeOrchestrator {
         this.cacheManager = cacheManager;
     }
 
-    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Kolkata")
+    @Scheduled(cron = "${kitradar.refresh.cron:0 0 3 * * *}", zone = "${kitradar.refresh.zone:Asia/Kolkata}")
     public void scheduledRefresh() {
         try {
             refresh(null);
