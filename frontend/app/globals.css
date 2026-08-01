@@ -6,7 +6,14 @@
 
 * { box-sizing: border-box; }
 
-body { @apply m-0 bg-ink text-zinc-100 antialiased; }
+body {
+  @apply m-0 bg-ink text-zinc-100 antialiased;
+  background-image:
+    radial-gradient(circle at 14% -8%, rgb(191 78 102 / 22%), transparent 32rem),
+    radial-gradient(circle at 92% 4%, rgb(255 146 104 / 13%), transparent 25rem),
+    linear-gradient(150deg, #15111f 0%, #191323 48%, #120e1a 100%);
+  min-height: 100vh;
+}
 
 a { @apply no-underline; }
 

@@ -27,6 +27,6 @@ export function KitGrid({ initialPage, query }: { initialPage: KitPage; query: s
   if (cards.length === 0) return <div className="rounded-2xl border border-dashed border-line p-12 text-center text-zinc-500">No kits match these filters.</div>;
   return <>
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">{cards.map((kit) => <KitCard key={kit.id} kit={kit} />)}</div>
-    {hasMore && <div className="mt-8 text-center"><button type="button" disabled={loading} onClick={loadMore} className="rounded-xl bg-signal px-5 py-3 text-sm font-bold text-black disabled:opacity-50">{loading ? "Loading…" : "Load more"}</button></div>}
+    {hasMore && <div className="mt-8 text-center"><button type="button" disabled={loading} onClick={loadMore} className="rounded-xl bg-signal px-5 py-3 text-sm font-bold text-ink shadow-[3px_3px_0_#b84e62] transition hover:-translate-y-0.5 disabled:opacity-50">{loading ? "Loading…" : "Load more"}</button></div>}
   </>;
 }

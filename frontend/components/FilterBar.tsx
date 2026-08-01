@@ -38,12 +38,12 @@ export function FilterBar({ stores }: { stores: Store[] }) {
     <section aria-label="Filters" className={`mb-7 rounded-2xl border border-line bg-panel p-4 ${pending ? "opacity-70" : ""}`}>
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
         <input value={text} onChange={(event) => setText(event.target.value)} placeholder="Search clubs, teams, kits…" aria-label="Search kits"
-          className="w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm placeholder:text-zinc-600" />
-        <select value={params.get("sort") ?? "featured"} onChange={(event) => update("sort", [event.target.value])} className="rounded-xl border border-line bg-ink px-3 py-2.5 text-sm">
+          className="w-full rounded-xl border border-line bg-[#181221] px-3 py-2.5 text-sm placeholder:text-zinc-600 focus:border-signal" />
+        <select value={params.get("sort") ?? "featured"} onChange={(event) => update("sort", [event.target.value])} className="rounded-xl border border-line bg-[#181221] px-3 py-2.5 text-sm">
           <option value="featured">Featured</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option><option value="discount">Biggest discount</option><option value="newest">Newest</option>
         </select>
-        <label className="flex items-center gap-2 rounded-xl border border-line bg-ink px-3 py-2.5 text-sm"><input type="checkbox" checked={params.get("inStock") === "true"} onChange={(event) => update("inStock", event.target.checked ? ["true"] : [])} /> In stock</label>
-        <button type="button" onClick={() => router.replace(pathname)} className="rounded-xl border border-line px-3 py-2.5 text-sm text-zinc-400 hover:text-white">Clear</button>
+        <label className="flex items-center gap-2 rounded-xl border border-line bg-[#181221] px-3 py-2.5 text-sm"><input type="checkbox" checked={params.get("inStock") === "true"} onChange={(event) => update("inStock", event.target.checked ? ["true"] : [])} /> In stock</label>
+        <button type="button" onClick={() => router.replace(pathname)} className="rounded-xl border border-line px-3 py-2.5 text-sm text-zinc-400 transition-colors hover:border-signal/70 hover:text-cream">Clear</button>
       </div>
       <div className="mt-4 grid gap-4 border-t border-line pt-4 md:grid-cols-3">
         <FilterGroup label="Size">{sizes.map((size) => <Pill key={size} active={params.getAll("size").includes(size)} onClick={() => toggle("size", size)}>{size}</Pill>)}</FilterGroup>
@@ -59,5 +59,5 @@ function FilterGroup({ label, children }: { label: string; children: React.React
 }
 
 function Pill({ active, children, onClick }: { active: boolean; children: React.ReactNode; onClick(): void }) {
-  return <button type="button" onClick={onClick} className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${active ? "border-signal bg-signal text-black" : "border-line text-zinc-400 hover:border-zinc-500"}`}>{children}</button>;
+  return <button type="button" onClick={onClick} className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${active ? "border-signal bg-signal text-ink" : "border-line text-zinc-400 hover:border-signal/60 hover:text-cream"}`}>{children}</button>;
 }

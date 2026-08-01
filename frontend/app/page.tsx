@@ -10,7 +10,7 @@ type SearchParams = Record<string, string | string[] | undefined>;
 export default async function Home({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = toParams(await searchParams);
   const [page, stores] = await Promise.all([getKits(params), getStores()]);
-  return <Catalogue title="Every kit, one radar." intro="Search live listings across the stores we track." page={page} stores={stores} query={params.toString()} />;
+  return <Catalogue title="The kit hunt, made joyful." intro="Search live listings across the stores we track." page={page} stores={stores} query={params.toString()} />;
 }
 
 export function toParams(values: SearchParams) {
@@ -27,7 +27,7 @@ export function toParams(values: SearchParams) {
 export function Catalogue({ title, intro, page, stores, query }: { title: string; intro: string; page: Awaited<ReturnType<typeof getKits>>; stores: Awaited<ReturnType<typeof getStores>>; query: string }) {
   return <>
     <section className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-      <div><p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-signal">Kit discovery</p><h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">{title}</h1><p className="mt-3 max-w-xl text-sm text-zinc-400">{intro}</p></div>
+      <div><p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-signal">KitPaglu picks</p><h1 className="text-3xl font-black tracking-tight text-cream sm:text-5xl">{title}</h1><p className="mt-3 max-w-xl text-sm text-zinc-400">{intro}</p></div>
       <p className="text-sm text-zinc-500"><span className="font-semibold text-zinc-200">{page.totalElements.toLocaleString()} kits found</span><br />{relativeTime(page.lastUpdatedAt)}</p>
     </section>
     <FilterBar stores={stores} />

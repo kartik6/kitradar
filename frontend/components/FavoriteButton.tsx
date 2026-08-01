@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const key = "kitradar:favorites:v1";
+const key = "kitpaglu:favorites:v1";
 const limit = 100;
 
 function readFavorites(): number[] {
@@ -24,12 +24,12 @@ export function FavoriteButton({ kitId }: { kitId: number }) {
       : [kitId, ...favorites].slice(0, limit);
     localStorage.setItem(key, JSON.stringify(next));
     setSaved(next.includes(kitId));
-    window.dispatchEvent(new Event("kitradar:favorites"));
+    window.dispatchEvent(new Event("kitpaglu:favorites"));
   }
 
   return (
     <button type="button" onClick={toggle} aria-label={saved ? "Remove from favourites" : "Save to favourites"}
-      className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-black/65 text-lg text-white backdrop-blur hover:bg-black">
+      className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-ink/75 text-lg text-cream backdrop-blur transition hover:bg-signal hover:text-ink">
       {saved ? "♥" : "♡"}
     </button>
   );

@@ -32,8 +32,8 @@ export function FavoritesView() {
       setMissing(favoriteIds.length - resolved.length);
     }
     load();
-    window.addEventListener("kitradar:favorites", load);
-    return () => window.removeEventListener("kitradar:favorites", load);
+    window.addEventListener("kitpaglu:favorites", load);
+    return () => window.removeEventListener("kitpaglu:favorites", load);
   }, []);
 
   if (cards === null) return <p className="text-zinc-500">Loading favourites…</p>;

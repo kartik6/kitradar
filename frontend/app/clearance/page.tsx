@@ -10,5 +10,5 @@ export default async function Clearance({ searchParams }: { searchParams: Promis
   params.set("onClearance", "true");
   if (!params.has("sort")) params.set("sort", "discount");
   const [page, stores] = await Promise.all([getKits(params), getStores()]);
-  return <Catalogue title="Clearance radar." intro="Genuine seller-listed discounts, ordered by biggest saving." page={page} stores={stores} query={params.toString()} />;
+  return <Catalogue title="Last-chance kits." intro="Genuine seller-listed discounts, ordered by biggest saving." page={page} stores={stores} query={params.toString()} />;
 }

@@ -1,0 +1,32 @@
+# fly.toml app configuration file generated for kitradar-api-kartik on 2026-08-01T19:58:47+05:30
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "kitradar-api-kartik"
+primary_region = "sin"
+
+kill_signal = "SIGTERM"
+kill_timeout = "300s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+
+  # Keep the public API available without a cold start.
+  auto_stop_machines = "off"
+  auto_start_machines = false
+
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/actuator/health/readiness"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
