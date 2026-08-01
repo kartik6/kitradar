@@ -27,7 +27,7 @@ export function FavoriteButton({ kitId }: { kitId: number }) {
     localStorage.setItem(key, JSON.stringify(next));
     setSaved(isSaved);
     setPopping(false);
-    if (isSaved) window.requestAnimationFrame(() => setPopping(true));
+    if (isSaved) window.setTimeout(() => setPopping(true), 0);
     window.dispatchEvent(new Event("kitpaglu:favorites"));
   }
 
