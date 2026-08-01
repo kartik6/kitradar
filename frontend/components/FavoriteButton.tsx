@@ -28,9 +28,10 @@ export function FavoriteButton({ kitId }: { kitId: number }) {
   }
 
   return (
-    <button type="button" onClick={toggle} aria-label={saved ? "Remove from favourites" : "Save to favourites"}
-      className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-ink/75 text-lg text-cream backdrop-blur transition hover:bg-signal hover:text-ink">
-      {saved ? "♥" : "♡"}
+    <button type="button" onClick={toggle} aria-pressed={saved} aria-label={saved ? "Remove from favourites" : "Save to favourites"}
+      className={`absolute right-2 top-2 inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold backdrop-blur transition ${saved ? "bg-signal text-ink" : "bg-ink/85 text-cream hover:bg-[#342742]"}`}>
+      <span aria-hidden="true" className="text-base leading-none">{saved ? "♥" : "♡"}</span>
+      <span>{saved ? "Saved" : "Save"}</span>
     </button>
   );
 }

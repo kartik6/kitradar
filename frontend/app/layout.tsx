@@ -18,6 +18,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <span>kit<span className="text-signal">paglu</span></span>
             </Link>
             <div className="flex items-center gap-4 text-sm font-medium text-zinc-300">
+              <Link href="/" className="transition-colors hover:text-signal">Home</Link>
               <Link href="/clearance" className="transition-colors hover:text-signal">Clearance</Link>
               <Link href="/favorites" className="transition-colors hover:text-signal">Favourites</Link>
             </div>
