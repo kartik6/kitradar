@@ -53,6 +53,10 @@ public class ProductVariant {
     private int position;
 
     ProductVariant(ProductData.VariantData data) {
+        apply(data);
+    }
+
+    public void apply(ProductData.VariantData data) {
         this.externalId = data.externalId();
         this.sizeLabel = data.sizeLabel();
         this.sizeNorm = data.sizeNorm();

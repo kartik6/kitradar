@@ -20,6 +20,7 @@ const failures = [];
 for (const source of selectedSources) {
   let catalogueFetched = false;
   try {
+    console.log(`${source.slug}: fetching ${source.platform} catalogue...`);
     const products = await fetchProducts(source);
     catalogueFetched = true;
     const result = await request(`${apiBase}/imports/raw?store=${encodeURIComponent(source.slug)}`, {
@@ -72,8 +73,8 @@ async function fetchProducts(source) {
 async function fetchWooCommerce(source) {
   const baseUrl = source.baseUrl.replace(/\/$/, "");
   const endpoint = await wooCommerceEndpoint(baseUrl);
-  const products = await fetchWooCommerceCollection(endpoint, {});
-  const variations = await fetchWooCommerceCollection(endpoint, { type: "variation" });
+  const products = await fetchWooCommerceCollection(source.slug, endpoint, {}, "products");
+  const variations = await fetchWooCommerceCollection(source.slug, endpoint, { type: "variation" }, "variations");
   const variationsByParent = new Map();
   for (const variation of variations) {
     if (variation.parent != null) {
@@ -84,7 +85,7 @@ async function fetchWooCommerce(source) {
   return products.map((product) => mapWooCommerceProduct(product, variationsByParent.get(String(product.id)) ?? []));
 }
 
-async function fetchWooCommerceCollection(endpoint, filters) {
+async function fetchWooCommerceCollection(storeSlug, endpoint, filters, label) {
   const products = [];
   for (let page = 1; page <= 100; page += 1) {
     const params = new URLSearchParams({ per_page: "100", page: String(page), ...filters });
@@ -93,6 +94,7 @@ async function fetchWooCommerceCollection(endpoint, filters) {
       throw new Error(`Expected an array from WooCommerce at ${endpoint}`);
     }
     products.push(...pageProducts);
+    console.log(`${storeSlug}: WooCommerce ${label} page ${page}; fetched ${products.length} records`);
     if (pageProducts.length < 100) break;
     await pause(750);
   }
@@ -165,6 +167,7 @@ async function fetchShopify(source) {
     });
     const pageProducts = response.products ?? [];
     products.push(...pageProducts.map((product) => mapShopifyProduct(product, source.baseUrl)));
+    console.log(`${source.slug}: Shopify page ${page}; fetched ${products.length} products`);
     if (pageProducts.length < 250) break;
     await pause(1000);
   }
@@ -201,9 +204,10 @@ async function fetchDotPe(source) {
     .map((url) => url.pathname.split("/").filter(Boolean))
     .filter((parts) => parts.length >= 3 && parts[0] === "product")
     .map((parts) => ({ id: parts[1], slug: parts[2] }));
+  console.log(`${source.slug}: DotPe sitemap has ${locations.length} product routes`);
 
   const products = [];
-  for (const location of locations) {
+  for (const [index, location] of locations.entries()) {
     try {
       const product = await dotPeProduct(baseUrl, buildId, location);
       products.push(mapDotPeProduct(product, baseUrl));
@@ -216,6 +220,10 @@ async function fetchDotPe(source) {
       } catch (retryError) {
         if (retryError.status !== 404) throw retryError;
       }
+    }
+    const completed = index + 1;
+    if (completed % 25 === 0 || completed === locations.length) {
+      console.log(`${source.slug}: DotPe processed ${completed}/${locations.length} routes`);
     }
     await pause(250);
   }
@@ -262,7 +270,7 @@ function mapDotPeProduct(product, baseUrl) {
 
 async function request(url, options = {}) {
   const { responseType = "json", ...fetchOptions } = options;
-  const response = await fetch(url, fetchOptions);
+  const response = await fetch(url, { ...fetchOptions, signal: AbortSignal.timeout(20_000) });
   if (!response.ok) {
     const error = new Error(`${response.status} ${response.statusText}: ${(await response.text()).slice(0, 500)}`);
     error.status = response.status;

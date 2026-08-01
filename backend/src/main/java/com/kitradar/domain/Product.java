@@ -16,7 +16,11 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -114,8 +118,31 @@ public class Product {
     }
 
     public void replaceVariants(List<ProductVariant> replacements) {
-        variants.clear();
-        replacements.forEach(this::addVariant);
+        Map<String, ProductVariant> existingByExternalId = new HashMap<>();
+        for (ProductVariant variant : variants) {
+            existingByExternalId.put(variant.getExternalId(), variant);
+        }
+
+        Set<String> incomingExternalIds = new HashSet<>();
+        for (ProductVariant replacement : replacements) {
+            if (!incomingExternalIds.add(replacement.getExternalId())) {
+                continue;
+            }
+            ProductVariant existing = existingByExternalId.get(replacement.getExternalId());
+            if (existing == null) {
+                addVariant(replacement);
+            } else {
+                existing.apply(new ProductData.VariantData(
+                        replacement.getExternalId(),
+                        replacement.getSizeLabel(),
+                        replacement.getSizeNorm(),
+                        replacement.getPrice(),
+                        replacement.getCompareAtPrice(),
+                        replacement.isAvailable(),
+                        replacement.getPosition()));
+            }
+        }
+        variants.removeIf(variant -> !incomingExternalIds.contains(variant.getExternalId()));
     }
 
     public void addVariant(ProductVariant variant) {
