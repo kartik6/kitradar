@@ -37,7 +37,7 @@ public class KitController {
             @RequestParam(name = "minPrice", required = false) BigDecimal minPrice,
             @RequestParam(name = "maxPrice", required = false) BigDecimal maxPrice,
             @RequestParam(name = "kind", defaultValue = "jersey") String kind,
-            @RequestParam(name = "sort", defaultValue = "latest_added") String sort,
+            @RequestParam(name = "sort", defaultValue = "latest_arrivals") String sort,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "pageSize", defaultValue = "24") int pageSize) {
         if (page < 0 || pageSize < 1 || pageSize > 60) {

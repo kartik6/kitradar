@@ -151,12 +151,11 @@ Non-jersey items (shorts, socks, jackets, keychains, match balls — roughly 5% 
 
 | Option | Ordering |
 |---|---|
-| Latest arrivals *(default)* | In-stock first, then items newly added to KitPaglu |
+| Latest arrivals *(default)* | In-stock first, then seller-provided product creation date descending; listings without a reliable seller date follow dated listings |
 | Mixed picks | Deterministic, varied round-robin selection across sellers |
 | Price: low to high | Lowest price ascending |
 | Price: high to low | Lowest price descending |
 | Biggest discount | Discount percentage descending |
-| Newest at seller | Seller/source creation date descending |
 
 ### FR-6 — Version classification
 

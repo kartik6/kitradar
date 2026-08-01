@@ -155,8 +155,7 @@ sequenceDiagram
 | Filters | JPA Specifications compose optional filters; repeated size/store/version values use OR within each filter while filter groups combine with AND. |
 | Size + stock | The size and availability predicate applies to the same `product_variant`, so an out-of-stock M cannot qualify because XL is available. |
 | Display price | Lowest available variant price; otherwise lowest variant price. Any MRP/reference price is taken from that same display variant. |
-| Default sort | `latest_added`: in-stock first, then `first_seen_at` descending, then ID descending. This means newest to KitPaglu. |
-| Seller-newest sort | `newest`: in-stock first, then `source_created_at` descending, then ID descending. |
+| Default sort | `latest_arrivals`: in-stock first, then seller `source_created_at` descending with missing dates last, then ID descending. It never treats local ingestion time as a seller arrival time. |
 | Mixed picks | Product cards are grouped into stock/image-quality tiers and deterministically shuffled, then round-robin interleaved by seller. |
 
 ### Source adapters
