@@ -72,14 +72,27 @@ async function fetchProducts(source) {
 async function fetchWooCommerce(source) {
   const baseUrl = source.baseUrl.replace(/\/$/, "");
   const endpoint = await wooCommerceEndpoint(baseUrl);
-  const products = [];
-
-  for (let page = 1; page <= 100; page += 1) {
-    const pageProducts = await request(`${endpoint}?per_page=100&page=${page}`, { headers: commonHeaders });
-    if (!Array.isArray(pageProducts)) {
-      throw new Error(`${source.slug}: expected an array from WooCommerce`);
+  const products = await fetchWooCommerceCollection(endpoint, {});
+  const variations = await fetchWooCommerceCollection(endpoint, { type: "variation" });
+  const variationsByParent = new Map();
+  for (const variation of variations) {
+    if (variation.parent != null) {
+      const key = String(variation.parent);
+      variationsByParent.set(key, [...(variationsByParent.get(key) ?? []), variation]);
     }
-    products.push(...pageProducts.map(mapWooCommerceProduct));
+  }
+  return products.map((product) => mapWooCommerceProduct(product, variationsByParent.get(String(product.id)) ?? []));
+}
+
+async function fetchWooCommerceCollection(endpoint, filters) {
+  const products = [];
+  for (let page = 1; page <= 100; page += 1) {
+    const params = new URLSearchParams({ per_page: "100", page: String(page), ...filters });
+    const pageProducts = await request(`${endpoint}?${params.toString()}`, { headers: commonHeaders });
+    if (!Array.isArray(pageProducts)) {
+      throw new Error(`Expected an array from WooCommerce at ${endpoint}`);
+    }
+    products.push(...pageProducts);
     if (pageProducts.length < 100) break;
     await pause(750);
   }
@@ -97,20 +110,8 @@ async function wooCommerceEndpoint(baseUrl) {
   }
 }
 
-function mapWooCommerceProduct(product) {
-  const prices = product.prices ?? {};
-  const price = priceFromMinorUnits(prices.price, prices.currency_minor_unit);
-  const regularPrice = priceFromMinorUnits(prices.regular_price, prices.currency_minor_unit);
-  const available = product.is_in_stock ?? product.stock_status !== "outofstock";
-  const variants = product.variations ?? [];
-  const mappedVariants = variants.map((variant, index) => ({
-    externalId: String(variant.id),
-    sizeLabel: (variant.attributes ?? []).find((attribute) => attribute.name?.trim().toLowerCase() === "size")?.value ?? null,
-    price,
-    compareAtPrice: regularPrice,
-    available: Boolean(available),
-    position: index,
-  }));
+function mapWooCommerceProduct(product, variations) {
+  const mappedVariants = variations.map((variant, index) => mapWooCommerceVariant(variant, index));
 
   return {
     externalId: String(product.id),
@@ -121,10 +122,27 @@ function mapWooCommerceProduct(product) {
     category: product.categories?.[0]?.name ?? null,
     sourceCreatedAt: null,
     variants: mappedVariants.length ? mappedVariants : [{
-      externalId: String(product.id), sizeLabel: null, price, compareAtPrice: regularPrice,
-      available: Boolean(available), position: 0,
+      ...mapWooCommerceVariant(product, 0), externalId: String(product.id), sizeLabel: null,
     }],
   };
+}
+
+function mapWooCommerceVariant(variant, position) {
+  const prices = variant.prices ?? {};
+  return {
+    externalId: String(variant.id),
+    sizeLabel: (variant.attributes ?? []).find((attribute) => attribute.name?.trim().toLowerCase() === "size")?.value
+      ?? sizeFromVariationLabel(variant.variation),
+    price: priceFromMinorUnits(prices.price, prices.currency_minor_unit),
+    compareAtPrice: priceFromMinorUnits(prices.regular_price, prices.currency_minor_unit),
+    available: Boolean(variant.is_in_stock ?? variant.stock_status !== "outofstock"),
+    position,
+  };
+}
+
+function sizeFromVariationLabel(label) {
+  const match = typeof label === "string" && label.match(/(?:^|,\s*)size:\s*([^,]+)/i);
+  return match ? match[1].trim() : null;
 }
 
 function priceFromMinorUnits(value, minorUnit = 2) {
