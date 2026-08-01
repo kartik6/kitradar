@@ -35,7 +35,7 @@ export function FilterBar({ stores }: { stores: Store[] }) {
   }
 
   return (
-    <section aria-label="Filters" className={`mb-7 rounded-2xl border border-line bg-panel p-4 ${pending ? "opacity-70" : ""}`}>
+    <section aria-label="Filters" className={`relative z-20 mb-7 rounded-2xl border border-line bg-panel p-4 ${pending ? "opacity-70" : ""}`}>
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
         <input value={text} onChange={(event) => setText(event.target.value)} placeholder="Search clubs, teams, kits…" aria-label="Search kits"
           className="w-full rounded-xl border border-line bg-[#181221] px-3 py-2.5 text-sm placeholder:text-zinc-600 focus:border-signal" />
