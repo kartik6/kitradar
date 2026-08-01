@@ -59,11 +59,22 @@ Deliberately excluded to keep v0 shippable. Each is a candidate for v1.
 
 **~1,527 products at launch.**
 
-### Planned coverage (post-v0)
+### Expanded coverage
 
-Verified as Shopify, so each is a configuration change with no code: **Thayyil Sports** (`thayyilsports.com`), **Store 1914** (`store1914.in`), **Gully Sports** (`gullysports.in`).
+The catalogue worker supports public Shopify and WooCommerce Store API catalogues. Enabled stores are read from the backend registry, so all stores on these platforms are included by the same nightly workflow.
 
-**Shopezzy** (`shopezzy.com`) runs on neither platform and needs its own investigation before it can be added.
+| Store | Domain | Platform |
+|---|---|---|
+| Shop Ezzy | `theshopezzy.com` | Shopify |
+| Store 1914 | `store1914.in` | Shopify |
+| Gully Sports | `gullysports.in` | Shopify |
+| Campeon Sports | `campeonsports.com` | Shopify |
+| Jersey Hut | `jerseyhut.in` | Shopify |
+| JC Club | `jcclub.in` | WooCommerce |
+| Outhouse Athleisure | `outhouseathleisure.com` | WooCommerce |
+| Kitkrew | `kitkrew.in` | Shopify |
+
+**Ministry of Jerseys** (`ministryofjerseys.netlify.app`) is intentionally not in the comparison feed yet: its public catalogue asks buyers to enquire for price rather than exposing a seller-listed price. A priced comparison surface should not invent a price.
 
 ## 6. User stories
 

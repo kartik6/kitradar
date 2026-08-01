@@ -31,6 +31,7 @@ public class MetaService {
                         store.getSlug(),
                         store.getName(),
                         productRepository.countByStoreIdAndActiveTrueAndProductKind(store.getId(), ProductKind.JERSEY)))
+                .filter(store -> store.productCount() > 0)
                 .toList();
     }
 
@@ -46,7 +47,7 @@ public class MetaService {
         ProductRepository.PriceRange prices = productRepository.findActivePriceRange(ProductKind.JERSEY);
         return new MetaDto(
                 productRepository.countByActiveTrueAndProductKind(ProductKind.JERSEY),
-                stores.stream().filter(store -> store.productCount() > 0).count(),
+                stores.size(),
                 lastUpdatedAt,
                 List.of(SizeNorm.S.name(), SizeNorm.M.name(), SizeNorm.L.name(), SizeNorm.XL.name(), SizeNorm.XXL.name(), SizeNorm.XXXL.name()),
                 List.of(KitVersion.FAN, KitVersion.PLAYER, KitVersion.MASTER, KitVersion.RETRO,

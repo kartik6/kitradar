@@ -7,7 +7,7 @@ const commonHeaders = {
   "User-Agent": "KitPagluBot/1.0 (+https://kitpaglu.vercel.app)",
 };
 
-const sources = await request(`${apiBase}/sources`);
+const sources = await request(`${apiBase}/sources`, { headers: commonHeaders });
 const selectedSources = requestedStore
   ? sources.filter((source) => source.slug === requestedStore)
   : sources;
@@ -32,9 +32,81 @@ async function fetchProducts(source) {
       return fetchShopify(source);
     case "DOTPE":
       return fetchDotPe(source);
+    case "WOOCOMMERCE":
+      return fetchWooCommerce(source);
     default:
       throw new Error(`${source.slug}: unsupported platform ${source.platform}`);
   }
+}
+
+async function fetchWooCommerce(source) {
+  const baseUrl = source.baseUrl.replace(/\/$/, "");
+  const endpoint = await wooCommerceEndpoint(baseUrl);
+  const products = [];
+
+  for (let page = 1; page <= 100; page += 1) {
+    const pageProducts = await request(`${endpoint}?per_page=100&page=${page}`, { headers: commonHeaders });
+    if (!Array.isArray(pageProducts)) {
+      throw new Error(`${source.slug}: expected an array from WooCommerce`);
+    }
+    products.push(...pageProducts.map(mapWooCommerceProduct));
+    if (pageProducts.length < 100) break;
+    await pause(750);
+  }
+  return products;
+}
+
+async function wooCommerceEndpoint(baseUrl) {
+  const modernEndpoint = `${baseUrl}/wp-json/wc/store/v1/products`;
+  try {
+    await request(`${modernEndpoint}?per_page=1`, { headers: commonHeaders });
+    return modernEndpoint;
+  } catch (error) {
+    if (error.status !== 404) throw error;
+    return `${baseUrl}/wp-json/wc/store/products`;
+  }
+}
+
+function mapWooCommerceProduct(product) {
+  const prices = product.prices ?? {};
+  const price = priceFromMinorUnits(prices.price, prices.currency_minor_unit);
+  const regularPrice = priceFromMinorUnits(prices.regular_price, prices.currency_minor_unit);
+  const available = product.is_in_stock ?? product.stock_status !== "outofstock";
+  const variants = product.variations ?? [];
+  const mappedVariants = variants.map((variant, index) => ({
+    externalId: String(variant.id),
+    sizeLabel: (variant.attributes ?? []).find((attribute) => attribute.name?.trim().toLowerCase() === "size")?.value ?? null,
+    price,
+    compareAtPrice: regularPrice,
+    available: Boolean(available),
+    position: index,
+  }));
+
+  return {
+    externalId: String(product.id),
+    title: product.name,
+    productUrl: product.permalink,
+    imageUrl: product.images?.[0]?.src ?? null,
+    tags: [...(product.categories ?? []), ...(product.tags ?? [])].map((entry) => entry.name).filter(Boolean),
+    category: product.categories?.[0]?.name ?? null,
+    sourceCreatedAt: null,
+    variants: mappedVariants.length ? mappedVariants : [{
+      externalId: String(product.id), sizeLabel: null, price, compareAtPrice: regularPrice,
+      available: Boolean(available), position: 0,
+    }],
+  };
+}
+
+function priceFromMinorUnits(value, minorUnit = 2) {
+  if (value == null || value === "") return null;
+  const digits = String(value).trim();
+  if (!/^-?\d+$/.test(digits)) return digits;
+  if (minorUnit === 0) return digits;
+  const negative = digits.startsWith("-");
+  const unsigned = negative ? digits.slice(1) : digits;
+  const padded = unsigned.padStart(minorUnit + 1, "0");
+  const splitAt = padded.length - minorUnit;
+  return `${negative ? "-" : ""}${padded.slice(0, splitAt)}.${padded.slice(splitAt)}`;
 }
 
 async function fetchShopify(source) {

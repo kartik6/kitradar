@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       store:
-        description: "Optional store slug: goal-thread, full-time-store, or the-football-frenzy"
+        description: "Optional enabled store slug; leave blank to refresh every source"
         required: false
         type: string
 
@@ -17,7 +17,7 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - name: Check out catalogue worker
         uses: actions/checkout@v4

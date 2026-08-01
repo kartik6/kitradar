@@ -46,18 +46,56 @@ export function FilterBar({ stores }: { stores: Store[] }) {
         <button type="button" onClick={() => router.replace(pathname)} className="rounded-xl border border-line px-3 py-2.5 text-sm text-zinc-400 transition-colors hover:border-signal/70 hover:text-cream">Clear</button>
       </div>
       <div className="mt-4 grid gap-4 border-t border-line pt-4 md:grid-cols-3">
-        <FilterGroup label="Size">{sizes.map((size) => <Pill key={size} active={params.getAll("size").includes(size)} onClick={() => toggle("size", size)}>{size}</Pill>)}</FilterGroup>
-        <FilterGroup label="Version">{versions.map((version) => <Pill key={version} active={params.getAll("version").includes(version)} onClick={() => toggle("version", version)}>{version.replaceAll("_", " ")}</Pill>)}</FilterGroup>
-        <FilterGroup label="Store">{stores.map((store) => <Pill key={store.slug} active={params.getAll("store").includes(store.slug)} onClick={() => toggle("store", store.slug)}>{store.name}</Pill>)}</FilterGroup>
+        <ChecklistSelector label="Size" name="size" options={sizes.map((size) => ({ value: size, label: size }))} selected={params.getAll("size")} onToggle={toggle} />
+        <ChecklistSelector label="Version" name="version" options={versions.map((version) => ({ value: version, label: version.replaceAll("_", " ") }))} selected={params.getAll("version")} onToggle={toggle} />
+        <ChecklistSelector label="Store" name="store" options={stores.map((store) => ({ value: store.slug, label: store.name }))} selected={params.getAll("store")} onToggle={toggle} />
       </div>
     </section>
   );
 }
 
-function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div><p className="mb-2 text-xs font-bold uppercase tracking-wider text-zinc-500">{label}</p><div className="flex flex-wrap gap-1.5">{children}</div></div>;
-}
+type ChecklistOption = { value: string; label: string };
 
-function Pill({ active, children, onClick }: { active: boolean; children: React.ReactNode; onClick(): void }) {
-  return <button type="button" onClick={onClick} className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${active ? "border-signal bg-signal text-ink" : "border-line text-zinc-400 hover:border-signal/60 hover:text-cream"}`}>{children}</button>;
+function ChecklistSelector({
+  label,
+  name,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  name: string;
+  options: ChecklistOption[];
+  selected: string[];
+  onToggle(name: string, value: string): void;
+}) {
+  const selectedCount = selected.length;
+
+  return (
+    <div>
+      <p className="mb-2 text-xs font-bold uppercase tracking-wider text-zinc-500">{label}</p>
+      <details className="group relative">
+        <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl border border-line bg-[#181221] px-3 py-2.5 text-sm text-zinc-300 transition hover:border-signal/60 hover:text-cream [&::-webkit-details-marker]:hidden">
+          <span>{selectedCount ? `${selectedCount} selected` : `Select ${label.toLowerCase()}`}</span>
+          <span className="ml-3 text-signal transition-transform group-open:rotate-180" aria-hidden="true">⌄</span>
+        </summary>
+        <div className="absolute z-10 mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-line bg-[#181221] p-2 shadow-2xl shadow-black/40">
+          {options.map((option) => {
+            const checked = selected.includes(option.value);
+            return (
+              <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-cream">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => onToggle(name, option.value)}
+                  className="h-4 w-4 rounded border-line accent-signal"
+                />
+                <span>{option.label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </details>
+    </div>
+  );
 }
