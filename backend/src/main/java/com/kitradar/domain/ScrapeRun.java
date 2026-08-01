@@ -67,4 +67,10 @@ public class ScrapeRun {
         this.upsertedCount = upsertedCount;
         this.delistedCount = delistedCount;
     }
+
+    public void fail(Instant finishedAt, String errorMessage) {
+        this.status = ScrapeStatus.FAILED;
+        this.finishedAt = finishedAt;
+        this.errorMessage = errorMessage;
+    }
 }

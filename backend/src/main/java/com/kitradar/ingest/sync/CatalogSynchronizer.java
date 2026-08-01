@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 @Service
 public class CatalogSynchronizer {
@@ -61,5 +62,14 @@ public class CatalogSynchronizer {
         store.markScraped(runAt);
         storeRepository.save(store);
         return new SyncResult(status, rawProducts.size(), rawProducts.size(), delistedCount);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordFailure(Store store, Exception exception) {
+        Instant finishedAt = clock.instant();
+        ScrapeRun run = ScrapeRun.start(store, finishedAt);
+        String message = exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage();
+        run.fail(finishedAt, message.length() <= 1_000 ? message : message.substring(0, 1_000));
+        scrapeRunRepository.save(run);
     }
 }

@@ -37,3 +37,7 @@ info:
   app:
     name: KitRadar
     description: Football kit discovery and comparison service
+
+kitradar:
+  admin:
+    token: ${ADMIN_TOKEN:}
