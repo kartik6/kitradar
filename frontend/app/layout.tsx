@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <footer className="border-t border-line/80 px-4 py-7 text-center text-xs leading-5 text-zinc-500 sm:px-6">
           Not affiliated with any store. Prices and availability are indicative — confirm on the seller&apos;s site. Prices may not include shipping charges.
         </footer>
+        <Analytics />
       </body>
     </html>
   );
