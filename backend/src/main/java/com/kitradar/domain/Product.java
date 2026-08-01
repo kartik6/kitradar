@@ -85,6 +85,30 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private final List<ProductVariant> variants = new ArrayList<>();
 
+    public Product(Store store, ProductData data, Instant seenAt) {
+        this.store = store;
+        this.externalId = data.externalId();
+        this.firstSeenAt = seenAt;
+        apply(data, seenAt);
+    }
+
+    public void apply(ProductData data, Instant seenAt) {
+        this.title = data.title();
+        this.searchText = data.searchText();
+        this.productUrl = data.productUrl();
+        this.imageUrl = data.imageUrl();
+        this.version = data.version();
+        this.productKind = data.productKind();
+        this.minPrice = data.minPrice();
+        this.compareAtPrice = data.compareAtPrice();
+        this.discountPercent = data.discountPercent();
+        this.inStock = data.inStock();
+        this.sourceCreatedAt = data.sourceCreatedAt();
+        this.lastSeenAt = seenAt;
+        this.active = true;
+        replaceVariants(data.variants().stream().map(ProductVariant::new).toList());
+    }
+
     public void replaceVariants(List<ProductVariant> replacements) {
         variants.clear();
         replacements.forEach(this::addVariant);

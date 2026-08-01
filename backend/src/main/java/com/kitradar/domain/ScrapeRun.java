@@ -51,4 +51,20 @@ public class ScrapeRun {
 
     @Column(name = "error_message")
     private String errorMessage;
+
+    public static ScrapeRun start(Store store, Instant startedAt) {
+        ScrapeRun run = new ScrapeRun();
+        run.store = store;
+        run.startedAt = startedAt;
+        run.status = ScrapeStatus.RUNNING;
+        return run;
+    }
+
+    public void finish(ScrapeStatus status, Instant finishedAt, int fetchedCount, int upsertedCount, int delistedCount) {
+        this.status = status;
+        this.finishedAt = finishedAt;
+        this.fetchedCount = fetchedCount;
+        this.upsertedCount = upsertedCount;
+        this.delistedCount = delistedCount;
+    }
 }

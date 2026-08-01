@@ -52,6 +52,16 @@ public class ProductVariant {
     @Column(nullable = false)
     private int position;
 
+    ProductVariant(ProductData.VariantData data) {
+        this.externalId = data.externalId();
+        this.sizeLabel = data.sizeLabel();
+        this.sizeNorm = data.sizeNorm();
+        this.price = data.price();
+        this.compareAtPrice = data.compareAtPrice();
+        this.available = data.available();
+        this.position = data.position();
+    }
+
     public void setProduct(Product product) {
         this.product = product;
     }

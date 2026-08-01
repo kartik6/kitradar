@@ -1,0 +1,31 @@
+{
+  "products": [
+    {
+      "id": 9680877945134,
+      "title": "Manchester United Jersey",
+      "handle": "manchester-united-jersey",
+      "tags": ["2022-23", "players version"],
+      "created_at": "2024-12-17T21:39:10+05:30",
+      "images": [{"src": "https://cdn.shopify.com/image.jpg"}],
+      "options": [
+        {"name": "Arm Badge", "position": 1},
+        {"name": "Size", "position": 2}
+      ],
+      "variants": [
+        {"id": 49673686286638, "option1": "UCL", "option2": "3XL", "option3": null, "price": "599.00", "compare_at_price": "1149.00", "available": true, "position": 1}
+      ]
+    },
+    {
+      "id": 9680877945135,
+      "title": "One Size Scarf",
+      "handle": "one-size-scarf",
+      "tags": [],
+      "created_at": "2024-12-17T21:39:10+05:30",
+      "images": [],
+      "options": [{"name": "Style", "position": 1}],
+      "variants": [
+        {"id": 49673686286639, "option1": "Default Title", "option2": null, "option3": null, "price": "299.00", "compare_at_price": null, "available": false, "position": 1}
+      ]
+    }
+  ]
+}
