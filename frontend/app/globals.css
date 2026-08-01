@@ -20,3 +20,34 @@ a { @apply no-underline; }
 button, input, select { font: inherit; }
 
 :focus-visible { @apply outline outline-2 outline-offset-2 outline-signal; }
+
+.favorite-button--popping::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 2px solid rgb(251 146 60 / 82%);
+  border-radius: 9999px;
+  animation: favorite-heart-burst 420ms ease-out both;
+  pointer-events: none;
+}
+
+.favorite-heart { position: relative; z-index: 1; }
+
+.favorite-heart--popping { animation: favorite-heart-pop 420ms cubic-bezier(.2, .9, .25, 1.35) both; }
+
+@keyframes favorite-heart-pop {
+  0% { transform: scale(.72); }
+  42% { transform: scale(1.45); }
+  68% { transform: scale(.92); }
+  100% { transform: scale(1); }
+}
+
+@keyframes favorite-heart-burst {
+  0% { opacity: .9; transform: scale(.55); }
+  100% { opacity: 0; transform: scale(1.42); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favorite-button--popping::after,
+  .favorite-heart--popping { animation: none; }
+}
