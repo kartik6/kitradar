@@ -79,6 +79,9 @@ public class Product {
     @Column(name = "last_seen_at", nullable = false)
     private Instant lastSeenAt;
 
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -105,6 +108,7 @@ public class Product {
         this.inStock = data.inStock();
         this.sourceCreatedAt = data.sourceCreatedAt();
         this.lastSeenAt = seenAt;
+        this.updatedAt = seenAt;
         this.active = true;
         replaceVariants(data.variants().stream().map(ProductVariant::new).toList());
     }

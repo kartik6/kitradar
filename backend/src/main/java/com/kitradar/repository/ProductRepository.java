@@ -24,7 +24,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     PriceRange findActivePriceRange(@Param("kind") ProductKind kind);
 
     @Modifying
-    @Query("update Product product set product.active = false "
+    @Query("update Product product set product.active = false, product.updatedAt = :runAt "
             + "where product.store.id = :storeId and product.lastSeenAt < :runAt and product.active = true")
     int deactivateNotSeenSince(@Param("storeId") Long storeId, @Param("runAt") java.time.Instant runAt);
 
