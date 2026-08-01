@@ -20,7 +20,7 @@ public class RestClientConfig {
 
         return RestClient.builder()
                 .requestFactory(requestFactory)
-                .defaultHeader("User-Agent", "KitRadarBot/0.1 (+https://kitradar.app/bot)")
+                .defaultHeader("User-Agent", "KitPagluBot/1.0 (+https://kitpaglu.vercel.app)")
                 .messageConverters(converters -> converters.stream()
                         .filter(MappingJackson2HttpMessageConverter.class::isInstance)
                         .findFirst()

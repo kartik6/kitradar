@@ -31,6 +31,6 @@ export function Catalogue({ title, intro, page, stores, query }: { title: string
       <p className="text-sm text-zinc-500"><span className="font-semibold text-zinc-200">{page.totalElements.toLocaleString()} kits found</span><br />{relativeTime(page.lastUpdatedAt)}</p>
     </section>
     <FilterBar stores={stores} />
-    <KitGrid initialPage={page} query={query} />
+    <KitGrid key={query} initialPage={page} query={query} />
   </>;
 }

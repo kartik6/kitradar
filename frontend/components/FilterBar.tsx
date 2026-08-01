@@ -40,7 +40,7 @@ export function FilterBar({ stores }: { stores: Store[] }) {
         <input value={text} onChange={(event) => setText(event.target.value)} placeholder="Search clubs, teams, kits…" aria-label="Search kits"
           className="w-full rounded-xl border border-line bg-[#181221] px-3 py-2.5 text-sm placeholder:text-zinc-600 focus:border-signal" />
         <select value={params.get("sort") ?? "featured"} onChange={(event) => update("sort", [event.target.value])} className="rounded-xl border border-line bg-[#181221] px-3 py-2.5 text-sm">
-          <option value="featured">Featured</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option><option value="discount">Biggest discount</option><option value="newest">Newest</option>
+          <option value="featured">Mixed picks</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option><option value="discount">Biggest discount</option><option value="newest">Newest</option>
         </select>
         <label className="flex items-center gap-2 rounded-xl border border-line bg-[#181221] px-3 py-2.5 text-sm"><input type="checkbox" checked={params.get("inStock") === "true"} onChange={(event) => update("inStock", event.target.checked ? ["true"] : [])} /> In stock</label>
         <button type="button" onClick={() => router.replace(pathname)} className="rounded-xl border border-line px-3 py-2.5 text-sm text-zinc-400 transition-colors hover:border-signal/70 hover:text-cream">Clear</button>

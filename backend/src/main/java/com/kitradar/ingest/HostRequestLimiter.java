@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class HostRequestLimiter {
 
-    private static final long MIN_GAP_NANOS = Duration.ofMillis(250).toNanos();
-    private static final int MAX_CONCURRENT_REQUESTS = 4;
+    private static final long MIN_GAP_NANOS = Duration.ofSeconds(1).toNanos();
+    private static final int MAX_CONCURRENT_REQUESTS = 1;
 
     private final ConcurrentHashMap<String, HostState> hosts = new ConcurrentHashMap<>();
 

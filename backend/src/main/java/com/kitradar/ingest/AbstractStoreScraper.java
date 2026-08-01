@@ -1,13 +1,16 @@
 package com.kitradar.ingest;
 
 import java.net.URI;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
 public abstract class AbstractStoreScraper {
 
-    private static final int MAX_ATTEMPTS = 3;
+    private static final int MAX_ATTEMPTS = 4;
 
     private final RestClient restClient;
     private final HostRequestLimiter limiter;
@@ -42,7 +45,7 @@ public abstract class AbstractStoreScraper {
                 if (!isRetryable(exception) || attempt == MAX_ATTEMPTS) {
                     break;
                 }
-                backoff(attempt);
+                backoff(attempt, exception);
             }
         }
         String detail = lastFailure == null || lastFailure.getMessage() == null
@@ -58,15 +61,38 @@ public abstract class AbstractStoreScraper {
             return true;
         }
         return exception instanceof RestClientResponseException responseException
-                && responseException.getStatusCode().is5xxServerError();
+                && (responseException.getStatusCode().value() == 429 || responseException.getStatusCode().is5xxServerError());
     }
 
-    private void backoff(int attempt) {
+    private void backoff(int attempt, Exception exception) {
+        long delayMillis = retryAfterMillis(exception)
+                .orElse(Math.min(30_000L, 2_000L * (1L << (attempt - 1))));
         try {
-            Thread.sleep(250L * (1L << (attempt - 1)));
+            Thread.sleep(delayMillis);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new ScrapeException("Interrupted during retry backoff", exception);
+        }
+    }
+
+    private java.util.Optional<Long> retryAfterMillis(Exception exception) {
+        if (!(exception instanceof RestClientResponseException responseException)) {
+            return java.util.Optional.empty();
+        }
+        String retryAfter = responseException.getResponseHeaders().getFirst(HttpHeaders.RETRY_AFTER);
+        if (retryAfter == null || retryAfter.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        try {
+            return java.util.Optional.of(Math.max(0L, Long.parseLong(retryAfter.trim()) * 1_000L));
+        } catch (NumberFormatException ignored) {
+            try {
+                long delay = ZonedDateTime.parse(retryAfter, DateTimeFormatter.RFC_1123_DATE_TIME)
+                        .toInstant().toEpochMilli() - System.currentTimeMillis();
+                return java.util.Optional.of(Math.max(0L, delay));
+            } catch (RuntimeException invalidDate) {
+                return java.util.Optional.empty();
+            }
         }
     }
 }
