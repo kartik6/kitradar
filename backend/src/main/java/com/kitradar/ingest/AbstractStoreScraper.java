@@ -69,9 +69,9 @@ public abstract class AbstractStoreScraper {
                 .orElse(Math.min(30_000L, 2_000L * (1L << (attempt - 1))));
         try {
             Thread.sleep(delayMillis);
-        } catch (InterruptedException exception) {
+        } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
-            throw new ScrapeException("Interrupted during retry backoff", exception);
+            throw new ScrapeException("Interrupted during retry backoff", interruptedException);
         }
     }
 
