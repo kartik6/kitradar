@@ -8,6 +8,9 @@ import com.kitradar.domain.ScrapeRun;
 import com.kitradar.ingest.RefreshAlreadyRunningException;
 import com.kitradar.ingest.RefreshResult;
 import com.kitradar.ingest.ScrapeOrchestrator;
+import com.kitradar.ingest.StoreRefreshResult;
+import com.kitradar.ingest.shopify.ShopifyImportService;
+import com.kitradar.ingest.shopify.ShopifyProductsResponse;
 import com.kitradar.repository.ScrapeRunRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -26,10 +30,15 @@ public class AdminController {
 
     private final ScrapeOrchestrator orchestrator;
     private final ScrapeRunRepository scrapeRunRepository;
+    private final ShopifyImportService shopifyImportService;
 
-    public AdminController(ScrapeOrchestrator orchestrator, ScrapeRunRepository scrapeRunRepository) {
+    public AdminController(
+            ScrapeOrchestrator orchestrator,
+            ScrapeRunRepository scrapeRunRepository,
+            ShopifyImportService shopifyImportService) {
         this.orchestrator = orchestrator;
         this.scrapeRunRepository = scrapeRunRepository;
+        this.shopifyImportService = shopifyImportService;
     }
 
     @PostMapping("/refresh")
@@ -38,6 +47,17 @@ public class AdminController {
             return toDto(orchestrator.refresh(store));
         } catch (RefreshAlreadyRunningException exception) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, exception.getMessage(), exception);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
+        }
+    }
+
+    @PostMapping("/imports/shopify")
+    public RefreshStoreDto importShopify(
+            @RequestParam String store,
+            @RequestBody ShopifyProductsResponse catalogue) {
+        try {
+            return toDto(shopifyImportService.importCatalogue(store, catalogue));
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
         }
@@ -76,6 +96,16 @@ public class AdminController {
                                 store.delistedCount(),
                                 store.errorMessage()))
                         .toList());
+    }
+
+    private RefreshStoreDto toDto(StoreRefreshResult result) {
+        return new RefreshStoreDto(
+                result.storeSlug(),
+                result.status(),
+                result.fetchedCount(),
+                result.upsertedCount(),
+                result.delistedCount(),
+                result.errorMessage());
     }
 
     private ScrapeRunDto toDto(ScrapeRun run) {

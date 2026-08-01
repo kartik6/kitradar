@@ -1,0 +1,68 @@
+package com.kitradar.ingest.shopify;
+
+import com.kitradar.domain.Platform;
+import com.kitradar.domain.Store;
+import com.kitradar.ingest.StoreRefreshResult;
+import com.kitradar.ingest.sync.CatalogSynchronizer;
+import com.kitradar.ingest.sync.SyncResult;
+import com.kitradar.repository.StoreRepository;
+import java.util.List;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.stereotype.Service;
+
+/**
+ * Imports a complete Shopify catalogue fetched by a trusted external runner.
+ *
+ * <p>The public store request happens outside the API host when a merchant rate-limits that host.
+ * Product mapping and database synchronization still happen here, so all catalogue writes follow
+ * the normal validation, normalization, run-history, and cache-invalidation path.</p>
+ */
+@Service
+public class ShopifyImportService {
+
+    private final StoreRepository storeRepository;
+    private final ShopifyMapper mapper;
+    private final CatalogSynchronizer catalogSynchronizer;
+    private final CacheManager cacheManager;
+
+    public ShopifyImportService(
+            StoreRepository storeRepository,
+            ShopifyMapper mapper,
+            CatalogSynchronizer catalogSynchronizer,
+            CacheManager cacheManager) {
+        this.storeRepository = storeRepository;
+        this.mapper = mapper;
+        this.catalogSynchronizer = catalogSynchronizer;
+        this.cacheManager = cacheManager;
+    }
+
+    public StoreRefreshResult importCatalogue(String storeSlug, ShopifyProductsResponse response) {
+        Store store = storeRepository.findBySlug(storeSlug)
+                .filter(Store::isEnabled)
+                .filter(candidate -> candidate.getPlatform() == Platform.SHOPIFY)
+                .orElseThrow(() -> new IllegalArgumentException("No enabled Shopify store exists for slug " + storeSlug));
+
+        try {
+            List<com.kitradar.ingest.model.RawProduct> products = response.products().stream()
+                    .map(product -> mapper.map(product, store.getBaseUrl()))
+                    .toList();
+            SyncResult result = catalogSynchronizer.synchronize(store, products);
+            clearReadCaches();
+            return new StoreRefreshResult(
+                    store.getSlug(), result.status(), result.fetchedCount(), result.upsertedCount(), result.delistedCount(), null);
+        } catch (RuntimeException exception) {
+            catalogSynchronizer.recordFailure(store, exception);
+            throw exception;
+        }
+    }
+
+    private void clearReadCaches() {
+        for (String cacheName : List.of("kitQueries", "meta")) {
+            Cache cache = cacheManager.getCache(cacheName);
+            if (cache != null) {
+                cache.clear();
+            }
+        }
+    }
+}
