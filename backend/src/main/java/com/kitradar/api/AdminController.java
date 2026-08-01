@@ -2,6 +2,8 @@ package com.kitradar.api;
 
 import com.kitradar.api.dto.RefreshResultDto;
 import com.kitradar.api.dto.RefreshStoreDto;
+import com.kitradar.api.dto.IngestionSourceDto;
+import com.kitradar.api.dto.RawCatalogueDto;
 import com.kitradar.api.dto.ScrapeRunDto;
 import com.kitradar.api.dto.ScrapeRunPageDto;
 import com.kitradar.domain.ScrapeRun;
@@ -12,6 +14,7 @@ import com.kitradar.ingest.StoreRefreshResult;
 import com.kitradar.ingest.shopify.ShopifyImportService;
 import com.kitradar.ingest.shopify.ShopifyProductsResponse;
 import com.kitradar.repository.ScrapeRunRepository;
+import com.kitradar.repository.StoreRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,14 +33,17 @@ public class AdminController {
 
     private final ScrapeOrchestrator orchestrator;
     private final ScrapeRunRepository scrapeRunRepository;
+    private final StoreRepository storeRepository;
     private final ShopifyImportService shopifyImportService;
 
     public AdminController(
             ScrapeOrchestrator orchestrator,
             ScrapeRunRepository scrapeRunRepository,
+            StoreRepository storeRepository,
             ShopifyImportService shopifyImportService) {
         this.orchestrator = orchestrator;
         this.scrapeRunRepository = scrapeRunRepository;
+        this.storeRepository = storeRepository;
         this.shopifyImportService = shopifyImportService;
     }
 
@@ -58,6 +64,24 @@ public class AdminController {
             @RequestBody ShopifyProductsResponse catalogue) {
         try {
             return toDto(shopifyImportService.importCatalogue(store, catalogue));
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
+        }
+    }
+
+    @GetMapping("/sources")
+    public java.util.List<IngestionSourceDto> sources() {
+        return storeRepository.findByEnabledTrueOrderByNameAsc().stream()
+                .map(store -> new IngestionSourceDto(store.getSlug(), store.getBaseUrl(), store.getPlatform()))
+                .toList();
+    }
+
+    @PostMapping("/imports/raw")
+    public RefreshStoreDto importRawCatalogue(
+            @RequestParam String store,
+            @RequestBody RawCatalogueDto catalogue) {
+        try {
+            return toDto(shopifyImportService.importRawCatalogue(store, catalogue.products()));
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
         }

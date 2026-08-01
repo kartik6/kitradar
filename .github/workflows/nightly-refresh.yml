@@ -19,7 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Refresh catalogue through the appropriate egress path
+      - name: Check out catalogue worker
+        uses: actions/checkout@v4
+
+      - name: Refresh every enabled catalogue source
         env:
           KITRADAR_API_URL: ${{ secrets.KITRADAR_API_URL }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
@@ -29,68 +32,4 @@ jobs:
           set -euo pipefail
           : "${KITRADAR_API_URL:?Set the KITRADAR_API_URL GitHub Actions secret}"
           : "${ADMIN_TOKEN:?Set the ADMIN_TOKEN GitHub Actions secret}"
-
-          api_base="${KITRADAR_API_URL%/}/api/v1/admin"
-
-          refresh_goal_thread() {
-            curl --fail-with-body --show-error --silent \
-              --retry 2 --retry-all-errors --connect-timeout 15 --max-time 540 \
-              --request POST \
-              --header "Authorization: Bearer ${ADMIN_TOKEN}" \
-              "${api_base}/refresh?store=goal-thread"
-          }
-
-          import_shopify() {
-            local slug="$1"
-            local base_url="$2"
-            local work_dir
-            local page=1
-            local product_count
-            work_dir="$(mktemp -d)"
-            trap 'rm -rf "${work_dir}"' RETURN
-
-            while (( page <= 40 )); do
-              curl --fail-with-body --show-error --silent --location \
-                --retry 2 --retry-all-errors --connect-timeout 15 --max-time 90 \
-                --header "User-Agent: KitPagluBot/1.0 (+https://kitpaglu.vercel.app)" \
-                "${base_url%/}/products.json?limit=250&page=${page}" \
-                --output "${work_dir}/${page}.json"
-              product_count="$(jq '.products | length' "${work_dir}/${page}.json")"
-              if (( product_count < 250 )); then
-                break
-              fi
-              page=$((page + 1))
-              sleep 2
-            done
-
-            jq -s '{products: [ .[].products[] ]}' "${work_dir}"/*.json > "${work_dir}/catalogue.json"
-            curl --fail-with-body --show-error --silent --connect-timeout 15 --max-time 180 \
-              --request POST \
-              --header "Authorization: Bearer ${ADMIN_TOKEN}" \
-              --header "Content-Type: application/json" \
-              --data-binary "@${work_dir}/catalogue.json" \
-              "${api_base}/imports/shopify?store=${slug}"
-            rm -rf "${work_dir}"
-            trap - RETURN
-          }
-
-          case "${STORE:-}" in
-            "")
-              import_shopify "full-time-store" "https://fulltimestore.in"
-              import_shopify "the-football-frenzy" "https://www.thefootballfrenzy.com"
-              refresh_goal_thread
-              ;;
-            full-time-store)
-              import_shopify "full-time-store" "https://fulltimestore.in"
-              ;;
-            the-football-frenzy)
-              import_shopify "the-football-frenzy" "https://www.thefootballfrenzy.com"
-              ;;
-            goal-thread)
-              refresh_goal_thread
-              ;;
-            *)
-              echo "Unsupported store: ${STORE}" >&2
-              exit 2
-              ;;
-          esac
+          node scripts/refresh-catalogues.mjs

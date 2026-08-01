@@ -3,6 +3,7 @@ package com.kitradar.ingest.shopify;
 import com.kitradar.domain.Platform;
 import com.kitradar.domain.Store;
 import com.kitradar.ingest.StoreRefreshResult;
+import com.kitradar.ingest.model.RawProduct;
 import com.kitradar.ingest.sync.CatalogSynchronizer;
 import com.kitradar.ingest.sync.SyncResult;
 import com.kitradar.repository.StoreRepository;
@@ -38,15 +39,28 @@ public class ShopifyImportService {
     }
 
     public StoreRefreshResult importCatalogue(String storeSlug, ShopifyProductsResponse response) {
-        Store store = storeRepository.findBySlug(storeSlug)
-                .filter(Store::isEnabled)
-                .filter(candidate -> candidate.getPlatform() == Platform.SHOPIFY)
-                .orElseThrow(() -> new IllegalArgumentException("No enabled Shopify store exists for slug " + storeSlug));
+        Store store = store(storeSlug, Platform.SHOPIFY);
+        List<RawProduct> products = response.products().stream()
+                .map(product -> mapper.map(product, store.getBaseUrl()))
+                .toList();
+        return importProducts(store, products);
+    }
 
+    public StoreRefreshResult importRawCatalogue(String storeSlug, List<RawProduct> products) {
+        return importProducts(store(storeSlug, null), products);
+    }
+
+    private Store store(String storeSlug, Platform requiredPlatform) {
+        return storeRepository.findBySlug(storeSlug)
+                .filter(Store::isEnabled)
+                .filter(candidate -> requiredPlatform == null || candidate.getPlatform() == requiredPlatform)
+                .orElseThrow(() -> new IllegalArgumentException("No enabled "
+                        + (requiredPlatform == null ? "" : requiredPlatform + " ")
+                        + "store exists for slug " + storeSlug));
+    }
+
+    private StoreRefreshResult importProducts(Store store, List<RawProduct> products) {
         try {
-            List<com.kitradar.ingest.model.RawProduct> products = response.products().stream()
-                    .map(product -> mapper.map(product, store.getBaseUrl()))
-                    .toList();
             SyncResult result = catalogSynchronizer.synchronize(store, products);
             clearReadCaches();
             return new StoreRefreshResult(
