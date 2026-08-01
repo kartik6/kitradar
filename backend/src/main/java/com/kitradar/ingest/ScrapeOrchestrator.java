@@ -9,6 +9,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,17 +25,20 @@ public class ScrapeOrchestrator {
     private final ScraperRegistry scraperRegistry;
     private final CatalogSynchronizer catalogSynchronizer;
     private final Clock clock;
+    private final CacheManager cacheManager;
     private final AtomicBoolean refreshRunning = new AtomicBoolean();
 
     public ScrapeOrchestrator(
             StoreRepository storeRepository,
             ScraperRegistry scraperRegistry,
             CatalogSynchronizer catalogSynchronizer,
-            Clock clock) {
+            Clock clock,
+            CacheManager cacheManager) {
         this.storeRepository = storeRepository;
         this.scraperRegistry = scraperRegistry;
         this.catalogSynchronizer = catalogSynchronizer;
         this.clock = clock;
+        this.cacheManager = cacheManager;
     }
 
     @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Kolkata")
@@ -54,6 +59,9 @@ public class ScrapeOrchestrator {
         try {
             List<Store> stores = storesToRefresh(storeSlug);
             List<StoreRefreshResult> results = stores.stream().map(this::refreshStore).toList();
+            if (results.stream().anyMatch(result -> result.status() != com.kitradar.domain.ScrapeStatus.FAILED)) {
+                clearReadCaches();
+            }
             return new RefreshResult(startedAt, clock.instant(), results);
         } finally {
             refreshRunning.set(false);
@@ -85,6 +93,15 @@ public class ScrapeOrchestrator {
             log.warn("Refresh failed for store {}", store.getSlug(), exception);
             catalogSynchronizer.recordFailure(store, exception);
             return new StoreRefreshResult(store.getSlug(), ScrapeStatus.FAILED, 0, 0, 0, exception.getMessage());
+        }
+    }
+
+    private void clearReadCaches() {
+        for (String cacheName : List.of("kitQueries", "meta")) {
+            Cache cache = cacheManager.getCache(cacheName);
+            if (cache != null) {
+                cache.clear();
+            }
         }
     }
 }
