@@ -4,6 +4,7 @@ import com.kitradar.domain.Platform;
 import com.kitradar.domain.Store;
 import com.kitradar.ingest.AbstractStoreScraper;
 import com.kitradar.ingest.HostRequestLimiter;
+import com.kitradar.ingest.StoreScraper;
 import com.kitradar.ingest.model.RawProduct;
 import java.net.URI;
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
-public class ShopifyScraper extends AbstractStoreScraper {
+public class ShopifyScraper extends AbstractStoreScraper implements StoreScraper {
 
     private static final int PAGE_SIZE = 250;
     private static final int MAX_PAGES = 40;

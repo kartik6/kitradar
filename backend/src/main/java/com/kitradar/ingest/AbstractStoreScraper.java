@@ -5,7 +5,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
-public abstract class AbstractStoreScraper implements StoreScraper {
+public abstract class AbstractStoreScraper {
 
     private static final int MAX_ATTEMPTS = 3;
 
@@ -18,10 +18,18 @@ public abstract class AbstractStoreScraper implements StoreScraper {
     }
 
     protected <T> T getJson(URI uri, Class<T> responseType) {
+        return get(uri, () -> restClient.get().uri(uri).retrieve().body(responseType));
+    }
+
+    protected String getText(URI uri) {
+        return get(uri, () -> restClient.get().uri(uri).retrieve().body(String.class));
+    }
+
+    private <T> T get(URI uri, HostRequestLimiter.ThrowingSupplier<T> request) {
         RuntimeException lastFailure = null;
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                return limiter.execute(uri, () -> restClient.get().uri(uri).retrieve().body(responseType));
+                return limiter.execute(uri, request);
             } catch (InterruptedException exception) {
                 Thread.currentThread().interrupt();
                 throw new ScrapeException("Interrupted while fetching " + uri, exception);
@@ -37,7 +45,12 @@ public abstract class AbstractStoreScraper implements StoreScraper {
                 backoff(attempt);
             }
         }
-        throw new ScrapeException("Failed to fetch " + uri + " after " + MAX_ATTEMPTS + " attempts", lastFailure);
+        String detail = lastFailure == null || lastFailure.getMessage() == null
+                ? "unknown error"
+                : lastFailure.getMessage();
+        throw new ScrapeException(
+                "Failed to fetch " + uri + " after " + MAX_ATTEMPTS + " attempts: " + detail,
+                lastFailure);
     }
 
     private boolean isRetryable(Exception exception) {

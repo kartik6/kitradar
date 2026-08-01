@@ -1,0 +1,22 @@
+{
+  "pageProps": {
+    "product": {
+      "id": 33190335,
+      "name": "Spain Away 2010",
+      "price": 1249,
+      "discounted_price": 949,
+      "image_url": "https://cdn.dotpe.in/item.webp",
+      "link": "https://www.goalthread.co.in/product/33190335/Spain-Away-2010",
+      "category": {"name": "FAN VERSION"},
+      "collections": [{"name": "Spain"}],
+      "variants": [{
+        "variant_id": 7407274,
+        "variant_name": "S",
+        "available": 1,
+        "price": 1249,
+        "discounted_price": 949,
+        "option_variant_names": [{"option_name": "Size", "variant_name": "S"}]
+      }]
+    }
+  }
+}
