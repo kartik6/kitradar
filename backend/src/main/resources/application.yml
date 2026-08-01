@@ -39,5 +39,7 @@ info:
     description: Football kit discovery and comparison service
 
 kitradar:
+  # The deployed Vercel URL; localhost is deliberately the only development default.
+  frontend-origin: ${KITRADAR_FRONTEND_ORIGIN:http://localhost:3000}
   admin:
     token: ${ADMIN_TOKEN:}
