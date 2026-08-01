@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: kitradar
+      POSTGRES_USER: kitradar
+      POSTGRES_PASSWORD: kitradar
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kitradar -d kitradar"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - kitradar-postgres:/var/lib/postgresql/data
+
+volumes:
+  kitradar-postgres:
