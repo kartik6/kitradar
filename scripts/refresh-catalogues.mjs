@@ -1,3 +1,9 @@
+import { setDefaultResultOrder } from "node:dns";
+
+// Some hosted runners have no reliable IPv6 egress while a few source domains
+// publish AAAA records. Prefer IPv4 rather than failing before HTTP begins.
+setDefaultResultOrder("ipv4first");
+
 const apiBase = required("KITRADAR_API_URL").replace(/\/$/, "") + "/api/v1/admin";
 const adminToken = required("ADMIN_TOKEN");
 const requestedStore = process.env.STORE?.trim();
