@@ -2,7 +2,7 @@
 
 import { Store } from "@/lib/api";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 const sizes = ["S", "M", "L", "XL", "XXL", "XXXL"];
 const versions = ["FAN", "PLAYER", "MASTER", "RETRO", "KIDS", "WOMEN", "LONG_SLEEVE"];
@@ -12,14 +12,27 @@ export function FilterBar({ stores }: { stores: Store[] }) {
   const pathname = usePathname();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
-  const [text, setText] = useState(params.get("q") ?? "");
+  const queryText = params.get("q") ?? "";
+  const [text, setText] = useState(queryText);
+  const lastRequestedQuery = useRef(queryText);
 
-  useEffect(() => setText(params.get("q") ?? ""), [params]);
   useEffect(() => {
-    const timer = window.setTimeout(() => update("q", text ? [text] : []), 300);
+    // Ignore the URL update triggered by an earlier debounce: the user may have
+    // already typed another character before that navigation finishes.
+    if (queryText === lastRequestedQuery.current) return;
+    lastRequestedQuery.current = queryText;
+    setText(queryText);
+  }, [queryText]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (text === queryText) return;
+      lastRequestedQuery.current = text;
+      update("q", text ? [text] : []);
+    }, 300);
     return () => window.clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text]);
+  }, [text, queryText]);
 
   function update(name: string, values: string[]) {
     const next = new URLSearchParams(params.toString());
