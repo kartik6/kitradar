@@ -33,7 +33,7 @@ for (const source of selectedSources) {
     });
     console.log(`✓ END ${sourceLabel(source)} — ${result.status}; fetched=${result.fetchedCount}; upserted=${result.upsertedCount}; delisted=${result.delistedCount}; ${elapsed(sourceStartedAt)}`);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = describeError(error);
     failures.push(`${source.slug}: ${message}`);
     console.error(`✗ END ${sourceLabel(source)} — FAILED; ${message}; ${elapsed(sourceStartedAt)}`);
     if (!catalogueFetched) {
@@ -94,7 +94,7 @@ async function fetchWooCommerceCollection(storeSlug, endpoint, filters, label) {
   const products = [];
   for (let page = 1; page <= 100; page += 1) {
     const params = new URLSearchParams({ per_page: "100", page: String(page), ...filters });
-    const pageProducts = await request(`${endpoint}?${params.toString()}`, { headers: commonHeaders });
+    const pageProducts = await sourceRequest(`${endpoint}?${params.toString()}`, { headers: commonHeaders });
     if (!Array.isArray(pageProducts)) {
       throw new Error(`Expected an array from WooCommerce at ${endpoint}`);
     }
@@ -109,7 +109,7 @@ async function fetchWooCommerceCollection(storeSlug, endpoint, filters, label) {
 async function wooCommerceEndpoint(baseUrl) {
   const modernEndpoint = `${baseUrl}/wp-json/wc/store/v1/products`;
   try {
-    await request(`${modernEndpoint}?per_page=1`, { headers: commonHeaders });
+    await sourceRequest(`${modernEndpoint}?per_page=1`, { headers: commonHeaders });
     return modernEndpoint;
   } catch (error) {
     if (error.status !== 404) throw error;
@@ -167,7 +167,7 @@ function priceFromMinorUnits(value, minorUnit = 2) {
 async function fetchShopify(source) {
   const products = [];
   for (let page = 1; page <= 40; page += 1) {
-    const response = await request(`${source.baseUrl.replace(/\/$/, "")}/products.json?limit=250&page=${page}`, {
+    const response = await sourceRequest(`${source.baseUrl.replace(/\/$/, "")}/products.json?limit=250&page=${page}`, {
       headers: commonHeaders,
     });
     const pageProducts = response.products ?? [];
@@ -203,7 +203,7 @@ function mapShopifyProduct(product, baseUrl) {
 async function fetchDotPe(source) {
   const baseUrl = source.baseUrl.replace(/\/$/, "");
   let buildId = await dotPeBuildId(baseUrl);
-  const sitemap = await request(`${baseUrl}/sitemap_products.xml`, { headers: commonHeaders, responseType: "text" });
+  const sitemap = await sourceRequest(`${baseUrl}/sitemap_products.xml`, { headers: commonHeaders, responseType: "text" });
   const locations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)]
     .map((match) => new URL(match[1].trim()))
     .map((url) => url.pathname.split("/").filter(Boolean))
@@ -236,7 +236,7 @@ async function fetchDotPe(source) {
 }
 
 async function dotPeBuildId(baseUrl) {
-  const homepage = await request(baseUrl, { headers: commonHeaders, responseType: "text" });
+  const homepage = await sourceRequest(baseUrl, { headers: commonHeaders, responseType: "text" });
   const match = homepage.match(/"buildId"\s*:\s*"([^"]+)"/);
   if (!match) throw new Error(`Could not find Next.js build ID on ${baseUrl}`);
   return match[1];
@@ -244,7 +244,7 @@ async function dotPeBuildId(baseUrl) {
 
 async function dotPeProduct(baseUrl, buildId, location) {
   const url = `${baseUrl}/_next/data/${encodeURIComponent(buildId)}/product/${encodeURIComponent(location.id)}/${encodeURIComponent(location.slug)}.json`;
-  const response = await request(url, { headers: commonHeaders });
+  const response = await sourceRequest(url, { headers: commonHeaders });
   return response.pageProps.product;
 }
 
@@ -274,14 +274,49 @@ function mapDotPeProduct(product, baseUrl) {
 }
 
 async function request(url, options = {}) {
-  const { responseType = "json", ...fetchOptions } = options;
-  const response = await fetch(url, { ...fetchOptions, signal: AbortSignal.timeout(20_000) });
-  if (!response.ok) {
-    const error = new Error(`${response.status} ${response.statusText}: ${(await response.text()).slice(0, 500)}`);
-    error.status = response.status;
-    throw error;
+  const { responseType = "json", retryNetwork = false, ...fetchOptions } = options;
+  const attempts = retryNetwork ? 2 : 1;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(url, { ...fetchOptions, signal: AbortSignal.timeout(20_000) });
+      if (!response.ok) {
+        const error = new Error(`${response.status} ${response.statusText}: ${(await response.text()).slice(0, 500)}`);
+        error.status = response.status;
+        throw error;
+      }
+      return responseType === "text" ? response.text() : response.json();
+    } catch (error) {
+      if (error?.status || attempt === attempts || !isTransientNetworkError(error)) {
+        throw withRequestContext(url, error);
+      }
+      console.warn(`Transient network failure for ${url}; retrying once in 750ms (${describeError(error)})`);
+      await pause(750);
+    }
   }
-  return responseType === "text" ? response.text() : response.json();
+  throw new Error(`Failed to fetch ${url}`);
+}
+
+function sourceRequest(url, options = {}) {
+  return request(url, { ...options, retryNetwork: true });
+}
+
+function isTransientNetworkError(error) {
+  return error instanceof TypeError && error.message === "fetch failed";
+}
+
+function withRequestContext(url, error) {
+  if (error?.status) return error;
+  return new Error(`Failed to fetch ${url}: ${describeError(error)}`, { cause: error });
+}
+
+function describeError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const cause = error && typeof error === "object" ? error.cause : null;
+  if (!cause) return message;
+  const causeMessage = cause.message ?? String(cause);
+  if (message.includes(causeMessage)) return message;
+  const causeCode = cause.code ? `${cause.code}: ` : "";
+  return `${message} (${causeCode}${causeMessage})`;
 }
 
 function required(name) {
