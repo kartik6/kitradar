@@ -1,7 +1,7 @@
 # KitPaglu Architecture
 
 **Status:** Current implementation reference  
-**Last updated:** 2026-08-01
+**Last updated:** 2026-08-02
 
 KitPaglu is a read-heavy football-kit discovery and comparison application. It aggregates publicly exposed product catalogues, normalises listings and variants, and sends a buyer to the original seller to purchase. It does not own stock, take payments, or store end-user accounts.
 
@@ -84,6 +84,7 @@ erDiagram
       numeric compare_at_price
       boolean in_stock
       timestamptz source_created_at
+      boolean source_date_known
       timestamptz first_seen_at
       timestamptz last_seen_at
       timestamptz updated_at
@@ -118,6 +119,7 @@ Database invariants:
 - `product(store_id, external_id)` is unique, making product imports idempotent.
 - `product_variant(product_id, external_id)` is unique. Variants update in place by that external ID, avoiding the JPA orphan-removal insert/delete ordering problem.
 - `first_seen_at` never changes; `last_seen_at` advances when a product appears in a successful import; `updated_at` changes on a local product-state change, including a soft delist.
+- `source_date_known` is maintained with `source_created_at`. It allows seller-dated listings to sort before sources that do not expose a reliable creation date without relying on unsupported Criteria-query null precedence.
 - Products are never hard-deleted during a normal import. `active=false` preserves history and lets a relisted product reactivate with the same ID.
 
 ### Normalisation pipeline

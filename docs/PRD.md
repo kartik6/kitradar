@@ -1,7 +1,7 @@
-# KitRadar — Product Requirements Document (v0)
+# KitPaglu — Product Requirements Document (v0)
 
 **Status:** Approved for build
-**Last updated:** 2026-08-01
+**Last updated:** 2026-08-02
 **Engineering plan:** [`../plan.md`](../plan.md)
 
 ---
@@ -14,9 +14,9 @@ There is no single place to see what is actually buyable, right now, across all 
 
 ## 2. Product
 
-KitRadar pulls every store's catalogue on a nightly schedule into one normalised database and serves searchable, filterable jersey and clearance grids. Buyers can save kits as browser-local favourites, and clicking a card sends them to the original store to purchase.
+KitPaglu pulls every store's catalogue on a nightly schedule into one normalised database and serves searchable, filterable jersey and clearance grids. Buyers can save kits as browser-local favourites, and clicking a card sends them to the original store to purchase.
 
-KitRadar is a **discovery and comparison surface, not a marketplace.** We never handle carts, checkout, inventory, payments, shipping, or returns. We hold no stock and take no orders.
+KitPaglu is a **discovery and comparison surface, not a marketplace.** We never handle carts, checkout, inventory, payments, shipping, or returns. We hold no stock and take no orders.
 
 ## 3. Goals and non-goals
 
@@ -118,7 +118,7 @@ The whole card is a link opening in a new tab with `rel="noopener nofollow spons
 
 ### FR-2a — Favourites
 
-Buyers can save or remove a kit from any card and view their saved kits at `/favorites`. Favourites are stored only in `localStorage` as product IDs (namespaced and versioned as `kitradar:favorites:v1`), with a 100-kit limit. The favourites page resolves those IDs against the current catalogue after hydration; a saved product that is no longer listed remains saved but is called out as unavailable.
+Buyers can save or remove a kit from any card and view their saved kits at `/favorites`. Favourites are stored only in `localStorage` as product IDs (namespaced and versioned as `kitpaglu:favorites:v1`), with a 100-kit limit. The favourites page resolves those IDs against the current catalogue after hydration; a saved product that is no longer listed remains saved but is called out as unavailable.
 
 No account, login, server-side profile, analytics, or cross-device sync is involved. Clearing browser storage, changing browsers, or using a different device clears/separates the list.
 
@@ -187,7 +187,7 @@ The UI shows when the data was last refreshed ("Updated 6 hours ago"), so a buye
 
 **Performance.** Filtered query under 300ms p95 server-side on a warm cache. Results cached 15 minutes in-process and flushed immediately after a successful refresh, so data is never staler than the last run.
 
-**Politeness to source stores.** This is a hard requirement, not a nicety. Identifying User-Agent (`KitRadarBot/0.1`), at most 4 concurrent requests per host, at least 250ms between requests, 15s timeout, 3 retries with exponential backoff. Only public endpoints are read. `robots.txt` is respected. A full run touches each store for well under a minute.
+**Politeness to source stores.** This is a hard requirement, not a nicety. The client identifies itself as `KitPagluBot/1.0`; only public endpoints are read; requests are time-bounded and paced; and retries are bounded rather than used to hammer a rate-limited store. DotPe product routes deliberately run at 250 ms spacing, so a full multi-store refresh may take several minutes. The GitHub workflow allows 25 minutes and records each store's outcome independently.
 
 **Correctness over coverage.** Prefer showing less and being right. `UNKNOWN` beats a wrong guess; excluding an ambiguous product beats sending a buyer to a dead end.
 
@@ -198,7 +198,7 @@ The UI shows when the data was last refreshed ("Updated 6 hours ago"), so a buye
 - Footer disclaimer: *"Not affiliated with any of these stores. Prices and availability are indicative — confirm on the seller's site."*
 - Outbound links carry `rel="nofollow sponsored"`
 - Product images are hot-linked from the stores' own CDNs, never re-hosted
-- MRP and discount display use only a reference price supplied by the seller. When no higher reference price is supplied, KitRadar shows only the sale price and makes no discount claim.
+- MRP and discount display use only a reference price supplied by the seller. When no higher reference price is supplied, KitPaglu shows only the sale price and makes no discount claim.
 - We link to stores, we do not reproduce their storefronts, undercut them, or intercept their checkout
 - Any store that asks to be removed is removed, by flipping one `enabled` flag
 

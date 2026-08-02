@@ -1,10 +1,10 @@
-# Deploying KitRadar
+# Deploying KitPaglu
 
 This is the production deployment reference. KitPaglu currently runs with a Vercel frontend, a Fly.io Spring Boot API in Singapore, Neon PostgreSQL in Singapore, and a GitHub Actions catalogue worker. Secrets remain account-owned and are never committed.
 
 ## 1. PostgreSQL
 
-Create a Neon Postgres database, or another managed Postgres instance. KitRadar applies Flyway migrations on startup.
+Create a Neon Postgres database, or another managed Postgres instance. KitPaglu applies Flyway migrations on startup.
 
 ## 2. Backend
 
