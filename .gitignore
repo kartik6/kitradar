@@ -14,9 +14,10 @@ node_modules/
 .next/
 out/
 
-# Env
+# Environment files — examples are intentionally tracked, real values are not.
 .env
-.env.local
+.env.*
+!.env.example
 
 # OS / editor
 .DS_Store
