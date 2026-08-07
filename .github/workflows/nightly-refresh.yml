@@ -26,6 +26,8 @@ jobs:
         env:
           KITRADAR_API_URL: ${{ secrets.KITRADAR_API_URL }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          # Catalogue uploads can include hundreds of products and must outlive the short retailer-page timeout.
+          KITRADAR_IMPORT_TIMEOUT_MS: 120000
           STORE: ${{ inputs.store }}
         shell: bash
         run: |

@@ -7,6 +7,8 @@ setDefaultResultOrder("ipv4first");
 const apiBase = required("KITRADAR_API_URL").replace(/\/$/, "") + "/api/v1/admin";
 const adminToken = required("ADMIN_TOKEN");
 const requestedStore = process.env.STORE?.trim();
+const SOURCE_REQUEST_TIMEOUT_MS = 20_000;
+const IMPORT_REQUEST_TIMEOUT_MS = positiveIntegerEnv("KITRADAR_IMPORT_TIMEOUT_MS", 120_000);
 
 const commonHeaders = {
   Authorization: `Bearer ${adminToken}`,
@@ -32,12 +34,15 @@ for (const source of selectedSources) {
     console.log(`▶ START ${sourceLabel(source)} — ${source.platform}`);
     const products = await fetchProducts(source);
     catalogueFetched = true;
+    const importStartedAt = Date.now();
+    console.log(`↥ IMPORT ${sourceLabel(source)} — uploading ${products.length} product(s); backend deadline=${formatDuration(IMPORT_REQUEST_TIMEOUT_MS)}`);
     const result = await request(`${apiBase}/imports/raw?store=${encodeURIComponent(source.slug)}`, {
       method: "POST",
       headers: { ...commonHeaders, "Content-Type": "application/json" },
       body: JSON.stringify({ products }),
+      timeoutMs: IMPORT_REQUEST_TIMEOUT_MS,
     });
-    console.log(`✓ END ${sourceLabel(source)} — ${result.status}; fetched=${result.fetchedCount}; upserted=${result.upsertedCount}; delisted=${result.delistedCount}; ${elapsed(sourceStartedAt)}`);
+    console.log(`✓ END ${sourceLabel(source)} — ${result.status}; fetched=${result.fetchedCount}; upserted=${result.upsertedCount}; delisted=${result.delistedCount}; import=${elapsed(importStartedAt)}; total=${elapsed(sourceStartedAt)}`);
   } catch (error) {
     const message = describeError(error);
     failures.push(`${source.slug}: ${message}`);
@@ -280,11 +285,11 @@ function mapDotPeProduct(product, baseUrl) {
 }
 
 async function request(url, options = {}) {
-  const { responseType = "json", retryNetwork = false, ...fetchOptions } = options;
+  const { responseType = "json", retryNetwork = false, timeoutMs = SOURCE_REQUEST_TIMEOUT_MS, ...fetchOptions } = options;
   const attempts = retryNetwork ? 2 : 1;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      const response = await fetch(url, { ...fetchOptions, signal: AbortSignal.timeout(20_000) });
+      const response = await fetch(url, { ...fetchOptions, signal: AbortSignal.timeout(timeoutMs) });
       if (!response.ok) {
         const error = new Error(`${response.status} ${response.statusText}: ${(await response.text()).slice(0, 500)}`);
         error.status = response.status;
@@ -330,12 +335,25 @@ function required(name) {
   return process.env[name];
 }
 
+function positiveIntegerEnv(name, fallback) {
+  const value = process.env[name];
+  if (value == null || value.trim() === "") return fallback;
+  if (!/^\d+$/.test(value) || Number(value) < 1) {
+    throw new Error(`${name} must be a positive integer number of milliseconds`);
+  }
+  return Number(value);
+}
+
 function sourceLabel(source) {
   return `${source.slug} (${source.baseUrl})`;
 }
 
 function elapsed(startedAt) {
   return `${((Date.now() - startedAt) / 1000).toFixed(1)}s`;
+}
+
+function formatDuration(milliseconds) {
+  return milliseconds % 1_000 === 0 ? `${milliseconds / 1_000}s` : `${milliseconds}ms`;
 }
 
 function pause(milliseconds) {
