@@ -5,7 +5,7 @@
 
 KitPaglu is a read-heavy football-kit discovery and comparison application. It aggregates publicly exposed product catalogues, normalises listings and variants, and sends a buyer to the original seller to purchase. It does not own stock, take payments, or store end-user accounts.
 
-The original design plan in [`../plan.md`](../plan.md) remains useful as project history, but this document is the source of truth for the implemented high-level design (HLD) and low-level design (LLD).
+This document is the source of truth for the implemented high-level design (HLD) and low-level design (LLD).
 
 ## 1. High-level design
 

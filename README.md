@@ -2,7 +2,7 @@
 
 **A full-stack football-kit discovery platform that makes fragmented retailer catalogues searchable, comparable and easier to browse.**
 
-[Live demo](https://kitpaglu.vercel.app) · [Architecture](docs/ARCHITECTURE.md) · [Engineering learnings](docs/PROJECT_LEARNINGS.md) · [Interview guide](docs/INTERVIEW_GUIDE.md)
+[Live demo](https://kitpaglu.vercel.app) · [Architecture](docs/ARCHITECTURE.md) · [Deployment](docs/DEPLOYMENT.md)
 
 KitPaglu aggregates publicly exposed catalogue data from Indian football-kit retailers, normalises products and variants, and sends buyers to the original seller to complete a purchase. It is a discovery and comparison service—not a marketplace—and does not handle checkout, payments, inventory, shipping or returns.
 
@@ -132,9 +132,8 @@ Operational configuration is supplied as Fly/Vercel/GitHub Actions secrets. The 
 ## Project documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — HLD, LLD, Mermaid diagrams, data model and operational runbook.
-- [Project learnings](docs/PROJECT_LEARNINGS.md) — decisions, source-adapter challenges, production incidents and trade-offs.
-- [Interview guide](docs/INTERVIEW_GUIDE.md) — concise project pitch plus technical and behavioural follow-up answers.
-- [Resume notes](docs/RESUME_PROJECT.md) — evidence-backed resume bullets.
+- [Deployment](docs/DEPLOYMENT.md) — production setup and release runbook.
+- [Product requirements](docs/PRD.md) — product scope and acceptance criteria.
 
 ## Public-repository checklist
 

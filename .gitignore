@@ -19,6 +19,12 @@ out/
 .env.*
 !.env.example
 
+# Personal project notes — retained locally, intentionally excluded from the public repository.
+docs/INTERVIEW_GUIDE.md
+docs/PROJECT_LEARNINGS.md
+docs/RESUME_PROJECT.md
+plan.md
+
 # OS / editor
 .DS_Store
 .idea/

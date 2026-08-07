@@ -2,8 +2,6 @@
 
 **Status:** Approved for build
 **Last updated:** 2026-08-02
-**Engineering plan:** [`../plan.md`](../plan.md)
-
 ---
 
 ## 1. Problem
