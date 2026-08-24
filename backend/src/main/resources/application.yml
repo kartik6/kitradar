@@ -5,6 +5,16 @@ spring:
     url: ${JDBC_DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:kitradar}?sslmode=${DB_SSLMODE:disable}}
     username: ${DB_USER:kitradar}
     password: ${DB_PASSWORD:kitradar}
+    hikari:
+      # HikariCP 6.3 pings every idle connection every two minutes by default.
+      # Disable those pings and retire idle connections so Neon's five-minute
+      # scale-to-zero window can elapse when the catalogue is not being used.
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:4}
+      minimum-idle: ${DB_POOL_MIN_IDLE:0}
+      keepalive-time: ${DB_POOL_KEEPALIVE_MS:0}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT_MS:60000}
+      data-source-properties:
+        ApplicationName: kitradar-api
   jpa:
     hibernate:
       ddl-auto: validate

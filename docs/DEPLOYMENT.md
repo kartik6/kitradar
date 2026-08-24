@@ -24,9 +24,19 @@ Set these runtime values:
 | `ADMIN_TOKEN` | Yes | Long random token for refresh and run-history endpoints. |
 | `KITRADAR_FRONTEND_ORIGIN` | Yes | Exact deployed frontend origin, e.g. `https://kitradar.vercel.app`. |
 | `KITRADAR_REFRESH_CRON` | Recommended | Set to `-` when GitHub Actions owns the nightly refresh. |
+| `DB_POOL_MAX_SIZE` | No | Maximum JDBC connections; defaults to `4`, which is sufficient for the single small Fly machine. |
+| `DB_POOL_MIN_IDLE` | No | Minimum idle JDBC connections; defaults to `0` so unused connections can be retired. |
+| `DB_POOL_KEEPALIVE_MS` | No | Hikari keepalive interval; defaults to `0` (disabled) so it cannot prevent Neon scale-to-zero. |
+| `DB_POOL_IDLE_TIMEOUT_MS` | No | Idle connection lifetime; defaults to `60000` (one minute). |
 | `PORT` | Host-provided | HTTP port; defaults to `8080` locally. |
 
 Do not expose `ADMIN_TOKEN` to the frontend. The only public CORS-enabled endpoints are the catalogue read APIs.
+
+### Neon compute usage
+
+Neon suspends an inactive compute after five minutes on the Free plan. HikariCP 6.3 otherwise keeps ten idle connections and validates each one every two minutes, which keeps the compute continuously active even with no visitor traffic. The committed datasource defaults disable those validation pings, keep no minimum idle connections, and cap the pool at four. Do not enable a keepalive interval shorter than Neon's suspension window.
+
+In the Neon console, verify this after a backend deployment by opening **Monitoring** and checking that compute usage falls to zero between traffic and catalogue imports. A continuously active baseline usually means another client is querying the database more often than the scale-to-zero window.
 
 ## 3. Frontend
 
