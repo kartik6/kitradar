@@ -41,7 +41,7 @@ Next.js server-renders the first catalogue view through the Spring API. Subseque
 ### Ingestion path
 
 1. The GitHub Actions worker reads enabled sources from the protected registry.
-2. A platform adapter fetches one complete source catalogue and maps it into `RawProduct` / `RawVariant`.
+2. A platform adapter fetches and maps source products into `RawProduct` / `RawVariant`, retaining usable records if a later request fails.
 3. The worker uploads the canonical payload to the API; the worker never receives database credentials.
 4. Spring Boot validates and normalises the data, synchronises products/variants transactionally, conditionally soft-delists absent listings, records a run, then clears cache entries.
 
@@ -63,7 +63,7 @@ See the [architecture guide](docs/ARCHITECTURE.md) for HLD/LLD diagrams, data mo
 - **Variant identity:** `(product_id, external_id)` is unique; variants update in place to avoid ORM lifecycle collisions.
 - **Price integrity:** sale price and MRP come from the same selected variant, preventing misleading discounts.
 - **Stock integrity:** a `size=M` + `in stock` query must match an available M variant—not merely an available size elsewhere on the product.
-- **Safe removals:** a fetched count below half of a store's previous active catalogue is marked `PARTIAL`; it cannot soft-delist unseen products.
+- **Safe removals:** explicitly incomplete catalogues, empty imports, and fetched counts below half of a store's previous active catalogue are marked `PARTIAL`; they cannot soft-delist unseen products.
 - **Seller-new arrivals:** `source_created_at`, rather than local ingestion time, determines latest arrivals. Listings without a reliable seller date follow dated listings.
 
 ## Local development
@@ -107,7 +107,7 @@ The tracked [`frontend/.env.example`](frontend/.env.example) contains local publ
 ```bash
 cd backend && ./gradlew test
 npm --prefix frontend run build
-node --check scripts/refresh-catalogues.mjs
+node --test scripts/refresh-catalogues.test.mjs
 ```
 
 Backend tests cover product normalisation, price calculation, size/version classification, source mapping and idempotent variant synchronisation. The frontend production build validates routes and TypeScript compilation.
@@ -133,6 +133,7 @@ Operational configuration is supplied as Fly/Vercel/GitHub Actions secrets. The 
 
 - [Architecture](docs/ARCHITECTURE.md) — HLD, LLD, Mermaid diagrams, data model and operational runbook.
 - [Deployment](docs/DEPLOYMENT.md) — production setup and release runbook.
+- [Catalogue failure RCA](docs/CATALOGUE-FAILURE-RCA.md) — recent failure evidence, partial-sync safeguards and rollout order.
 - [Product requirements](docs/PRD.md) — product scope and acceptance criteria.
 
 ## Public-repository checklist

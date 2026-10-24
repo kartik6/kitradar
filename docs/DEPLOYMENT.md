@@ -68,7 +68,7 @@ The committed [nightly workflow](../.github/workflows/nightly-refresh.yml) runs 
 - `KITRADAR_API_URL` — the backend’s public HTTPS base URL.
 - `ADMIN_TOKEN` — the same backend-only token set above.
 
-Leave the manual `store` input blank to refresh every enabled source, or pass one exact slug to isolate a source. Every source gets a chance to run; a failed source is recorded in run history and the workflow fails only after the remaining sources complete. The 25-minute timeout leaves room for paced public APIs. With this workflow enabled, set `KITRADAR_REFRESH_CRON=-` on the backend to prevent a duplicate in-process run.
+Leave the manual `store` input blank to refresh every enabled source, or pass one exact slug to isolate a source. Source failures are isolated and recorded in run history. Mixed outcomes finish with warnings and a per-store summary when at least one source imports; backend import errors or zero imported sources still fail the workflow. Explicitly incomplete catalogues use `/api/v1/admin/imports/raw/partial`, which never delists unseen products. Deploy that backend endpoint before publishing the worker. See the [failure RCA](CATALOGUE-FAILURE-RCA.md) for the safeguards and tradeoffs. The 25-minute timeout leaves room for paced public APIs. With this workflow enabled, set `KITRADAR_REFRESH_CRON=-` on the backend to prevent a duplicate in-process run.
 
 ## 6. Post-deployment checklist
 
@@ -79,3 +79,27 @@ Leave the manual `store` input blank to refresh every enabled source, or pass on
 5. Set a host-level health check to `/actuator/health/readiness` and enable host log retention/alerts.
 
 The run-history endpoint supports `store`, `page`, and `pageSize` (1–100), for example: `GET /api/v1/admin/runs?store=full-time-store&page=0&pageSize=20`. For the current HLD, LLD and data-flow diagrams, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
+## 7. Rotate the catalogue admin token
+
+`ADMIN_TOKEN` is an application secret shared by the Fly backend and the GitHub Actions worker. It is not your Fly login credential, GitHub personal access token, or database password. Store the same new value in both:
+
+- Fly application: `kitradar-api-kartik`, secret `ADMIN_TOKEN`.
+- GitHub repository: `kartik6/kitradar`, Settings → Secrets and variables → Actions → repository secret `ADMIN_TOKEN`.
+
+Publish the corrected worker first so the replacement token is never sent to retailers. Wait until no catalogue refresh is running. Authenticate the CLIs with `fly auth login` and `gh auth login` if needed. Run the following in one terminal with shell tracing disabled; it generates a 256-bit random value and passes it over standard input without printing it or placing its literal value in shell history:
+
+```bash
+set +x
+KITRADAR_NEW_ADMIN_TOKEN="$(openssl rand -hex 32)" &&
+[[ "$KITRADAR_NEW_ADMIN_TOKEN" =~ ^[0-9a-f]{64}$ ]] &&
+printf 'ADMIN_TOKEN=%s\n' "$KITRADAR_NEW_ADMIN_TOKEN" | fly secrets import --app kitradar-api-kartik &&
+printf '%s' "$KITRADAR_NEW_ADMIN_TOKEN" | gh secret set ADMIN_TOKEN --repo kartik6/kitradar &&
+unset KITRADAR_NEW_ADMIN_TOKEN
+```
+
+The commands check that generation succeeded and produced 64 hexadecimal characters before uploading. Updating Fly secrets restarts the application to apply the value. If either update fails, keep the same terminal open and retry that update using the existing variable; do not generate another value and leave the two services mismatched. The variable is removed only after both updates succeed. Do not paste the token into chat or commit it to a file.
+
+After both updates succeed, manually dispatch the nightly refresh to validate authentication and imports. A healthy workflow proves that both services agree on the new credential. Old-token admin requests will be rejected; public catalogue reads do not require this token.
+
+References: [Fly secrets import](https://fly.io/docs/flyctl/secrets-import/) and [GitHub CLI secret set](https://cli.github.com/manual/gh_secret_set).

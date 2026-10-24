@@ -40,9 +40,14 @@ public class CatalogSynchronizer {
 
     @Transactional
     public SyncResult synchronize(Store store, List<RawProduct> rawProducts) {
+        return synchronize(store, rawProducts, true);
+    }
+
+    @Transactional
+    public SyncResult synchronize(Store store, List<RawProduct> rawProducts, boolean complete) {
         Instant runAt = clock.instant();
         long previousSuccessfulCount = productRepository.countByStoreIdAndActiveTrue(store.getId());
-        boolean partial = rawProducts.size() < previousSuccessfulCount * 0.5;
+        boolean partial = !complete || rawProducts.isEmpty() || rawProducts.size() < previousSuccessfulCount * 0.5;
         ScrapeRun run = scrapeRunRepository.save(ScrapeRun.start(store, runAt));
 
         for (RawProduct rawProduct : rawProducts) {

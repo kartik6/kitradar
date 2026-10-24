@@ -88,6 +88,18 @@ public class AdminController {
         }
     }
 
+    // Separate route prevents an older backend from silently treating partial data as complete.
+    @PostMapping("/imports/raw/partial")
+    public RefreshStoreDto importPartialCatalogue(
+            @RequestParam String store,
+            @RequestBody RawCatalogueDto catalogue) {
+        try {
+            return toDto(shopifyImportService.importPartialCatalogue(store, catalogue.products()));
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
+        }
+    }
+
     @PostMapping("/imports/failure")
     public void recordImportFailure(
             @RequestParam String store,

@@ -50,6 +50,10 @@ public class ShopifyImportService {
         return importProducts(store(storeSlug, null), products);
     }
 
+    public StoreRefreshResult importPartialCatalogue(String storeSlug, List<RawProduct> products) {
+        return importProducts(store(storeSlug, null), products, false);
+    }
+
     public void recordExternalFailure(String storeSlug, String message) {
         Store store = store(storeSlug, null);
         catalogSynchronizer.recordFailure(store, new IllegalStateException(message));
@@ -65,8 +69,12 @@ public class ShopifyImportService {
     }
 
     private StoreRefreshResult importProducts(Store store, List<RawProduct> products) {
+        return importProducts(store, products, true);
+    }
+
+    private StoreRefreshResult importProducts(Store store, List<RawProduct> products, boolean complete) {
         try {
-            SyncResult result = catalogSynchronizer.synchronize(store, products);
+            SyncResult result = catalogSynchronizer.synchronize(store, products, complete);
             clearReadCaches();
             return new StoreRefreshResult(
                     store.getSlug(), result.status(), result.fetchedCount(), result.upsertedCount(), result.delistedCount(), null);
